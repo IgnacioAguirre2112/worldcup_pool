@@ -1,0 +1,264 @@
+from __future__ import annotations
+
+import base64
+import re
+import unicodedata
+import zipfile
+from pathlib import Path
+
+import streamlit as st
+
+
+ROOT = Path(__file__).resolve().parent
+FLAGS_DIR = ROOT / "scripts" / "assets" / "flags"
+
+FLAG_ALIASES = {
+    "alemania": "alemania",
+    "arabia saudita": "arabia_saudita",
+    "argelia": "argelia",
+    "argentina": "argentina",
+    "australia": "australia",
+    "austria": "austria",
+    "belgica": "belgica",
+    "bosnia y herzegovina": "bosnia",
+    "brasil": "brasil",
+    "cabo verde": "cabo_verde",
+    "canada": "canada",
+    "chequia": "chequia",
+    "republica checa": "chequia",
+    "colombia": "colombia",
+    "corea del sur": "corea_sur",
+    "costa de marfil": "costa_marfil",
+    "croacia": "croacia",
+    "curazao": "curazao",
+    "ecuador": "ecuador",
+    "egipto": "egipto",
+    "escocia": "escocia",
+    "espana": "espana",
+    "estados unidos": "estados_unidos",
+    "francia": "francia",
+    "ghana": "ghana",
+    "haiti": "haiti",
+    "inglaterra": "inglaterra",
+    "irak": "irak",
+    "iran": "iran",
+    "japon": "japon",
+    "jordania": "jordania",
+    "marruecos": "marruecos",
+    "mexico": "mexico",
+    "noruega": "noruega",
+    "nueva zelanda": "nueva_zelanda",
+    "paises bajos": "paises_bajos",
+    "panama": "panama",
+    "paraguay": "paraguay",
+    "portugal": "portugal",
+    "qatar": "qatar",
+    "rd congo": "rd_congo",
+    "republica democratica del congo": "rd_congo",
+    "senegal": "senegal",
+    "sudafrica": "sudafrica",
+    "suiza": "suiza",
+    "tunez": "tunez",
+    "turquia": "turquia",
+    "uruguay": "uruguay",
+    "uzbekistan": "uzbekistan",
+}
+
+
+def normalize_name(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = text.lower().strip()
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+@st.cache_data(show_spinner=False)
+def flag_data_uri(team: str) -> str | None:
+    key = FLAG_ALIASES.get(normalize_name(team))
+    if not key:
+        return None
+    path = FLAGS_DIR / f"{key}.png"
+    if not path.exists() and (FLAGS_DIR.parent / "flags.zip").exists():
+        with zipfile.ZipFile(FLAGS_DIR.parent / "flags.zip") as archive:
+            archive.extractall(FLAGS_DIR.parent)
+    if not path.exists():
+        return None
+    data = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{data}"
+
+
+def inject_theme() -> None:
+    st.markdown(
+        """
+        <style>
+        :root {
+            --wc-bg: #050a19;
+            --wc-panel: rgba(7, 20, 48, 0.82);
+            --wc-panel-2: rgba(8, 27, 67, 0.72);
+            --wc-line: rgba(84, 144, 255, 0.28);
+            --wc-green: #39f27b;
+            --wc-text: #f8fbff;
+            --wc-muted: #a9b7d4;
+        }
+        .stApp {
+            color: var(--wc-text);
+            background:
+                radial-gradient(circle at 75% 0%, rgba(17, 85, 185, 0.32), transparent 34rem),
+                radial-gradient(circle at 5% 35%, rgba(34, 242, 123, 0.12), transparent 30rem),
+                linear-gradient(135deg, #030612 0%, #07183a 48%, #020611 100%);
+        }
+        .main .block-container {
+            max-width: 1440px;
+            padding-top: 1.4rem;
+        }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, rgba(3, 8, 25, 0.97), rgba(5, 17, 42, 0.94));
+            border-right: 1px solid rgba(84, 144, 255, 0.22);
+        }
+        [data-testid="stSidebar"] * {
+            color: var(--wc-text);
+        }
+        .wc-shell {
+            border: 1px solid var(--wc-line);
+            border-radius: 22px;
+            padding: 24px;
+            background: linear-gradient(145deg, rgba(4, 14, 39, 0.94), rgba(8, 28, 72, 0.72));
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+        }
+        .wc-kicker {
+            color: var(--wc-green);
+            font-size: 0.82rem;
+            letter-spacing: 0.16rem;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+        .wc-hero {
+            min-height: 440px;
+            border: 1px solid rgba(116, 160, 255, 0.48);
+            border-radius: 22px;
+            overflow: hidden;
+            padding: 28px;
+            background:
+                linear-gradient(180deg, rgba(2, 10, 30, 0.22), rgba(2, 10, 22, 0.72)),
+                radial-gradient(circle at 50% 18%, rgba(91, 131, 255, 0.4), transparent 22rem),
+                linear-gradient(180deg, #0c2f83 0%, #051737 56%, #06230f 100%);
+            position: relative;
+        }
+        .wc-hero:after {
+            content: "";
+            position: absolute;
+            inset: auto 0 0;
+            height: 36%;
+            background:
+                repeating-linear-gradient(90deg, rgba(117, 186, 102, 0.18) 0 2px, transparent 2px 76px),
+                linear-gradient(180deg, rgba(20, 115, 55, 0.15), rgba(30, 126, 54, 0.58));
+        }
+        .wc-match {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            align-items: center;
+            min-height: 280px;
+        }
+        .wc-team {
+            text-align: center;
+            min-width: 0;
+        }
+        .wc-team img {
+            width: min(290px, 100%);
+            aspect-ratio: 4 / 2.45;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.78);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+        }
+        .wc-team-name {
+            margin-top: 16px;
+            font-size: clamp(1.35rem, 3vw, 2.4rem);
+            line-height: 1.05;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .wc-vs {
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            font-weight: 950;
+            text-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+        }
+        .wc-meta {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .wc-card {
+            border: 1px solid var(--wc-line);
+            border-radius: 10px;
+            padding: 18px;
+            background: var(--wc-panel);
+        }
+        .wc-stat {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 900;
+        }
+        .wc-muted {
+            color: var(--wc-muted);
+        }
+        .wc-list-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(130, 170, 255, 0.16);
+        }
+        .wc-list-row:last-child {
+            border-bottom: 0;
+        }
+        .wc-list-row img {
+            width: 36px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+        div[data-testid="stMetric"] {
+            background: var(--wc-panel);
+            border: 1px solid var(--wc-line);
+            border-radius: 10px;
+            padding: 16px;
+        }
+        div[data-testid="stDataFrame"] {
+            border: 1px solid var(--wc-line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        @media (max-width: 800px) {
+            .wc-match {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+            .wc-vs {
+                font-size: 2.4rem;
+            }
+            .wc-hero {
+                padding: 18px;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def flag_img(team: str) -> str:
+    src = flag_data_uri(team)
+    if src:
+        return f'<img src="{src}" alt="{team}">'
+    return '<div style="height:160px;border-radius:20px;border:1px solid rgba(255,255,255,.45);display:grid;place-items:center;background:rgba(255,255,255,.08);font-weight:900;">FIFA</div>'

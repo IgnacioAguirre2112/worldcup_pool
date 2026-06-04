@@ -1,0 +1,105 @@
+id_partido,fecha,hora_chile,fase,grupo,local,visita
+1,2026-06-11,15:00,Fase de grupos,A,México,Sudáfrica
+2,2026-06-11,22:00,Fase de grupos,A,Corea del Sur,República Checa
+3,2026-06-12,15:00,Fase de grupos,B,Canadá,Bosnia y Herzegovina
+4,2026-06-12,21:00,Fase de grupos,D,Estados Unidos,Paraguay
+5,2026-06-13,15:00,Fase de grupos,B,Qatar,Suiza
+6,2026-06-13,18:00,Fase de grupos,C,Brasil,Marruecos
+7,2026-06-13,21:00,Fase de grupos,C,Haití,Escocia
+8,2026-06-13,00:00,Fase de grupos,D,Australia,Turquía
+9,2026-06-14,13:00,Fase de grupos,E,Alemania,Curazao
+10,2026-06-14,16:00,Fase de grupos,F,Países Bajos,Japón
+11,2026-06-14,19:00,Fase de grupos,E,Costa de Marfil,Ecuador
+12,2026-06-14,22:00,Fase de grupos,F,Suecia,Túnez
+13,2026-06-15,12:00,Fase de grupos,H,España,Cabo Verde
+14,2026-06-15,15:00,Fase de grupos,G,Bélgica,Egipto
+15,2026-06-15,18:00,Fase de grupos,H,Arabia Saudita,Uruguay
+16,2026-06-15,21:00,Fase de grupos,G,Irán,Nueva Zelanda
+17,2026-06-16,15:00,Fase de grupos,I,Francia,Senegal
+18,2026-06-16,18:00,Fase de grupos,I,Irak,Noruega
+19,2026-06-16,21:00,Fase de grupos,J,Argentina,Argelia
+20,2026-06-16,00:00,Fase de grupos,J,Austria,Jordania
+21,2026-06-17,13:00,Fase de grupos,K,Portugal,RD de Congo
+22,2026-06-17,16:00,Fase de grupos,L,Inglaterra,Croacia
+23,2026-06-17,19:00,Fase de grupos,L,Ghana,Panamá
+24,2026-06-17,22:00,Fase de grupos,K,Uzbekistán,Colombia
+25,2026-06-18,12:00,Fase de grupos,A,República Checa,Sudáfrica
+26,2026-06-18,15:00,Fase de grupos,B,Suiza,Bosnia y Herzegovina
+27,2026-06-18,18:00,Fase de grupos,B,Canadá,Qatar
+28,2026-06-18,21:00,Fase de grupos,A,México,Corea del Sur
+29,2026-06-19,15:00,Fase de grupos,D,Estados Unidos,Australia
+30,2026-06-19,18:00,Fase de grupos,C,Escocia,Marruecos
+31,2026-06-19,20:30,Fase de grupos,C,Brasil,Haití
+32,2026-06-19,23:00,Fase de grupos,D,Turquía,Paraguay
+33,2026-06-20,13:00,Fase de grupos,F,Países Bajos,Suecia
+34,2026-06-20,16:00,Fase de grupos,E,Alemania,Costa de Marfil
+35,2026-06-20,20:00,Fase de grupos,E,Ecuador,Curazao
+36,2026-06-20,00:00,Fase de grupos,F,Túnez,Japón
+37,2026-06-21,12:00,Fase de grupos,H,España,Arabia Saudita
+38,2026-06-21,15:00,Fase de grupos,G,Bélgica,Irán
+39,2026-06-21,18:00,Fase de grupos,H,Uruguay,Cabo Verde
+40,2026-06-21,21:00,Fase de grupos,G,Nueva Zelanda,Egipto
+41,2026-06-22,13:00,Fase de grupos,J,Argentina,Austria
+42,2026-06-22,17:00,Fase de grupos,I,Francia,Irak
+43,2026-06-22,20:00,Fase de grupos,I,Noruega,Senegal
+44,2026-06-22,23:00,Fase de grupos,J,Jordania,Argelia
+45,2026-06-23,13:00,Fase de grupos,K,Portugal,Uzbekistán
+46,2026-06-23,16:00,Fase de grupos,L,Inglaterra,Ghana
+47,2026-06-23,19:00,Fase de grupos,L,Panamá,Croacia
+48,2026-06-23,22:00,Fase de grupos,K,Colombia,RD de Congo
+49,2026-06-24,15:00,Fase de grupos,B,Suiza,Canadá
+50,2026-06-24,15:00,Fase de grupos,B,Bosnia y Herzegovina,Qatar
+51,2026-06-24,18:00,Fase de grupos,C,Marruecos,Haití
+52,2026-06-24,18:00,Fase de grupos,C,Brasil,Escocia
+53,2026-06-24,21:00,Fase de grupos,A,Sudáfrica,Corea del Sur
+54,2026-06-24,21:00,Fase de grupos,A,República Checa,México
+55,2026-06-25,16:00,Fase de grupos,E,Curazao,Costa de Marfil
+56,2026-06-25,16:00,Fase de grupos,E,Ecuador,Alemania
+57,2026-06-25,19:00,Fase de grupos,F,Japón,Suecia
+58,2026-06-25,19:00,Fase de grupos,F,Túnez,Países Bajos
+59,2026-06-25,22:00,Fase de grupos,D,Paraguay,Australia
+60,2026-06-25,22:00,Fase de grupos,D,Turquía,Estados Unidos
+61,2026-06-26,15:00,Fase de grupos,I,Noruega,Francia
+62,2026-06-26,15:00,Fase de grupos,I,Senegal,Irak
+63,2026-06-26,20:00,Fase de grupos,H,Cabo Verde,Arabia Saudita
+64,2026-06-26,20:00,Fase de grupos,H,Uruguay,España
+65,2026-06-26,23:00,Fase de grupos,G,Egipto,Irán
+66,2026-06-26,23:00,Fase de grupos,G,Nueva Zelanda,Bélgica
+67,2026-06-27,17:00,Fase de grupos,L,Croacia,Ghana
+68,2026-06-27,17:00,Fase de grupos,L,Panamá,Inglaterra
+69,2026-06-27,19:30,Fase de grupos,K,Colombia,Portugal
+70,2026-06-27,19:30,Fase de grupos,K,RD de Congo,Uzbekistán
+71,2026-06-27,22:00,Fase de grupos,J,Argelia,Austria
+72,2026-06-27,22:00,Fase de grupos,J,Jordania,Argentina
+73,2026-06-28,15:00,Dieciseisavos,,2º Grupo A,2º Grupo B
+74,2026-06-29,16:30,Dieciseisavos,,1º Grupo E,3º Grupo A/B/C/D/F
+75,2026-06-29,21:00,Dieciseisavos,,1º Grupo F,2º Grupo C
+76,2026-06-29,13:00,Dieciseisavos,,1º Grupo E,2º Grupo F
+77,2026-06-30,17:00,Dieciseisavos,,1º Grupo I,3º Grupo C/D/F/G/H
+78,2026-06-30,13:00,Dieciseisavos,,2º Grupo E,2º Grupo I
+79,2026-06-30,21:00,Dieciseisavos,,1º Grupo A,3º Grupo C/E/F/H/I
+80,2026-07-01,12:00,Dieciseisavos,,1º Grupo L,3º Grupo E/H/I/J/K
+81,2026-07-01,20:00,Dieciseisavos,,1º Grupo D,3º Grupo B/E/F/I/J
+82,2026-07-01,16:00,Dieciseisavos,,1º Grupo G,3º Grupo A/E/H/I/J
+83,2026-07-02,19:00,Dieciseisavos,,2º Grupo K,2º Grupo L
+84,2026-07-02,15:00,Dieciseisavos,,1º Grupo H,2º Grupo J
+85,2026-07-02,23:00,Dieciseisavos,,1º Grupo B,3º Grupo E/F/G/I/J
+86,2026-07-03,18:00,Dieciseisavos,,1º Grupo J,2º Grupo H
+87,2026-07-03,21:30,Dieciseisavos,,1º Grupo K,3º Grupo D/E/I/J/L
+88,2026-07-03,14:00,Dieciseisavos,,2º Grupo D,2º Grupo G
+89,2026-07-04,17:00,Octavos,,Ganador Partido 74,Ganador Partido 77
+90,2026-07-04,13:00,Octavos,,Ganador Partido 73,Ganador Partido 75
+91,2026-07-05,16:00,Octavos,,Ganador Partido 76,Ganador Partido 78
+92,2026-07-05,20:00,Octavos,,Ganador Partido 79,Ganador Partido 80
+93,2026-07-06,15:00,Octavos,,Ganador Partido 83,Ganador Partido 84
+94,2026-07-06,20:00,Octavos,,Ganador Partido 81,Ganador Partido 82
+95,2026-07-07,12:00,Octavos,,Ganador Partido 86,Ganador Partido 88
+96,2026-07-07,16:00,Octavos,,Ganador Partido 85,Ganador Partido 87
+97,2026-07-09,16:00,Cuartos,,Ganador Partido 89,Ganador Partido 90
+98,2026-07-10,15:00,Cuartos,,Ganador Partido 93,Ganador Partido 94
+99,2026-07-11,17:00,Cuartos,,Ganador Partido 91,Ganador Partido 92
+100,2026-07-11,21:00,Cuartos,,Ganador Partido 95,Ganador Partido 96
+101,2026-07-14,15:00,Semifinales,,Ganador Partido 97,Ganador Partido 98
+102,2026-07-15,15:00,Semifinales,,Ganador Partido 99,Ganador Partido 100
+103,2026-07-18,17:00,Tercer Lugar,,Perdedor Partido 101,Perdedor Partido 102
+104,2026-07-19,15:00,Final,,Ganador Partido 101,Ganador Partido 102
