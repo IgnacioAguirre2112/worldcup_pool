@@ -3,7 +3,15 @@ from datetime import datetime
 import streamlit as st
 from sqlalchemy import func, select
 
-from database import SessionLocal, get_or_create_user, init_db, ranking_dataframe, utc_to_chile
+from database import (
+    SessionLocal,
+    buscar_usuario_por_nombre,
+    crear_usuario,
+    init_db,
+    normalizar_nombre_participante,
+    ranking_dataframe,
+    utc_to_chile,
+)
 from models import Partido, Usuario
 from ui import flag_data_uri, flag_img, inject_theme
 
@@ -17,15 +25,43 @@ with st.sidebar:
     st.caption("Canadá · México · Estados Unidos")
     st.divider()
     st.header("Ingreso")
-    nombre = st.text_input("Tu nombre", value=st.session_state.get("nombre", ""), max_chars=80)
-    if st.button("Entrar", use_container_width=True) and nombre.strip():
-        try:
-            user = get_or_create_user(nombre)
-            st.session_state["usuario_id"] = user.id
-            st.session_state["nombre"] = user.nombre
-            st.success(f"Sesión iniciada: {user.nombre}")
-        except Exception as exc:
-            st.error(str(exc))
+
+    if "usuario_id" in st.session_state:
+        st.success(f"Sesión activa: {st.session_state.get('nombre', '')}")
+        st.caption("Tu nombre ya quedó confirmado para esta sesión.")
+    else:
+        nombre = st.text_input("Tu nombre", value=st.session_state.get("nombre_input", ""), max_chars=80)
+
+        if st.button("Continuar", use_container_width=True) and nombre.strip():
+            try:
+                nombre_normalizado = normalizar_nombre_participante(nombre)
+                if buscar_usuario_por_nombre(nombre_normalizado):
+                    st.session_state.pop("nombre_pendiente", None)
+                    st.error("Ese nombre ya está registrado. Para evitar duplicados, elige otro nombre.")
+                else:
+                    st.session_state["nombre_pendiente"] = nombre_normalizado
+            except Exception as exc:
+                st.error(str(exc))
+
+        if st.session_state.get("nombre_pendiente"):
+            nombre_pendiente = st.session_state["nombre_pendiente"]
+            st.warning(f"¿Estás seguro de que tu nombre será '{nombre_pendiente}'?")
+            st.caption("Después de confirmarlo no podrás volver a registrar ese mismo nombre.")
+            col_confirm, col_cancel = st.columns(2)
+            if col_confirm.button("Sí, confirmar", use_container_width=True):
+                try:
+                    user = crear_usuario(nombre_pendiente)
+                    st.session_state["usuario_id"] = user.id
+                    st.session_state["nombre"] = user.nombre
+                    st.session_state.pop("nombre_pendiente", None)
+                    st.success(f"Participante registrado: {user.nombre}")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+            if col_cancel.button("Cambiar", use_container_width=True):
+                st.session_state.pop("nombre_pendiente", None)
+                st.rerun()
+
     st.caption("Comparte el link público de Streamlit para que otros participantes entren con su nombre.")
 
 with SessionLocal() as db:
@@ -141,4 +177,4 @@ with right:
     )
 
 if "usuario_id" not in st.session_state:
-    st.info("Ingresa tu nombre en la barra lateral para participar y luego abre la página Pronósticos.")
+    st.info("Ingresa tu nombre en la barra lateral, confirma que está bien escrito y luego abre la página Pronósticos.")

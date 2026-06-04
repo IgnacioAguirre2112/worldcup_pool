@@ -1,18 +1,24 @@
 from __future__ import annotations
-from datetime import datetime
-from zoneinfo import ZoneInfo
+
 import csv
+from datetime import datetime
 from pathlib import Path
-from sqlalchemy import create_engine, select, func
+from zoneinfo import ZoneInfo
+
+from sqlalchemy import create_engine, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
-from models import Base, Usuario, Partido, Pronostico, PronosticoBonus, ResultadoBonus
+
+from models import Base, Partido, Pronostico, PronosticoBonus, ResultadoBonus, Usuario
 from scoring import calcular_puntaje
+
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "data" / "mundial2026.db"
 FIXTURE_PATH = ROOT / "uploads" / "fixture_mundial_2026.csv"
 CHILE_TZ = ZoneInfo("America/Santiago")
 UTC_TZ = ZoneInfo("UTC")
+
 DB_PATH.parent.mkdir(exist_ok=True)
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
@@ -70,18 +76,41 @@ def seed_fixture_from_csv(force: bool = False) -> int:
         return creados
 
 
-def get_or_create_user(nombre: str) -> Usuario:
+def normalizar_nombre_participante(nombre: str) -> str:
     nombre = " ".join(nombre.strip().split())[:80]
     if not nombre:
         raise ValueError("Ingresa un nombre válido")
+    return nombre
+
+
+def buscar_usuario_por_nombre(nombre: str) -> Usuario | None:
+    nombre = normalizar_nombre_participante(nombre)
+    with SessionLocal() as db:
+        return db.scalar(select(Usuario).where(func.lower(Usuario.nombre) == nombre.lower()))
+
+
+def crear_usuario(nombre: str) -> Usuario:
+    nombre = normalizar_nombre_participante(nombre)
+    with SessionLocal() as db:
+        if db.scalar(select(Usuario.id).where(func.lower(Usuario.nombre) == nombre.lower())):
+            raise ValueError("Ese nombre ya está registrado. Usa otro nombre para evitar duplicados.")
+        user = Usuario(nombre=nombre)
+        db.add(user)
+        try:
+            db.commit()
+        except IntegrityError as exc:
+            db.rollback()
+            raise ValueError("Ese nombre ya está registrado. Usa otro nombre para evitar duplicados.") from exc
+        return user
+
+
+def get_or_create_user(nombre: str) -> Usuario:
+    nombre = normalizar_nombre_participante(nombre)
     with SessionLocal() as db:
         user = db.scalar(select(Usuario).where(func.lower(Usuario.nombre) == nombre.lower()))
         if user:
             return user
-        user = Usuario(nombre=nombre)
-        db.add(user)
-        db.commit()
-        return user
+    return crear_usuario(nombre)
 
 
 def partido_bloqueado(partido: Partido) -> bool:
@@ -99,7 +128,14 @@ def guardar_pronostico(usuario_id: int, partido_id: int, gl: int, gv: int) -> No
             p.goles_visita_pronosticado = gv
             p.fecha_ingreso = datetime.utcnow()
         else:
-            db.add(Pronostico(usuario_id=usuario_id, partido_id=partido_id, goles_local_pronosticado=gl, goles_visita_pronosticado=gv))
+            db.add(
+                Pronostico(
+                    usuario_id=usuario_id,
+                    partido_id=partido_id,
+                    goles_local_pronosticado=gl,
+                    goles_visita_pronosticado=gv,
+                )
+            )
         db.commit()
 
 
@@ -137,6 +173,7 @@ def calcular_bonus_usuario(bonus: PronosticoBonus | None, oficial: ResultadoBonu
 
 def ranking_dataframe():
     import pandas as pd
+
     rows = []
     with SessionLocal() as db:
         usuarios = db.scalars(select(Usuario).order_by(Usuario.nombre)).all()
@@ -145,13 +182,19 @@ def ranking_dataframe():
             total = exactos = parciales = bonus = 0
             for p in u.pronosticos:
                 if p.partido.resultado_oficial_cargado:
-                    puntos, tipo = calcular_puntaje(p.goles_local_pronosticado, p.goles_visita_pronosticado, p.partido.goles_local, p.partido.goles_visita)
+                    puntos, tipo = calcular_puntaje(
+                        p.goles_local_pronosticado,
+                        p.goles_visita_pronosticado,
+                        p.partido.goles_local,
+                        p.partido.goles_visita,
+                    )
                     total += puntos
                     exactos += tipo == "exacto"
                     parciales += tipo in {"parcial", "parcial+diferencia"}
             bonus = calcular_bonus_usuario(db.get(PronosticoBonus, u.id), oficial)
             total += bonus
             rows.append({"Participante": u.nombre, "Exactos": exactos, "Parciales": parciales, "Bonus": bonus, "Total": total})
+
     df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Parciales", "Bonus", "Total"])
     if not df.empty:
         df = df.sort_values(["Total", "Exactos", "Parciales"], ascending=False).reset_index(drop=True)
