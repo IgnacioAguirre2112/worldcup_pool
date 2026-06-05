@@ -143,6 +143,52 @@ def inject_theme() -> None:
         [data-testid="stSidebar"] button:disabled * {
             color: #64748b !important;
         }
+        .stButton > button,
+        .stDownloadButton > button,
+        button[kind],
+        button[data-testid="baseButton-secondary"],
+        button[data-testid="baseButton-primary"] {
+            background: linear-gradient(180deg, #10264f 0%, #071733 100%) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(84, 144, 255, 0.55) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22) !important;
+            font-weight: 800 !important;
+        }
+        .stButton > button *,
+        .stDownloadButton > button *,
+        button[kind] *,
+        button[data-testid="baseButton-secondary"] *,
+        button[data-testid="baseButton-primary"] * {
+            color: #ffffff !important;
+        }
+        .stButton > button:hover,
+        .stDownloadButton > button:hover,
+        button[kind]:hover,
+        button[data-testid="baseButton-secondary"]:hover,
+        button[data-testid="baseButton-primary"]:hover {
+            background: linear-gradient(180deg, #17366e 0%, #0b1e42 100%) !important;
+            border-color: rgba(57, 242, 123, 0.8) !important;
+            color: #ffffff !important;
+        }
+        .stButton > button:disabled,
+        .stDownloadButton > button:disabled,
+        button[kind]:disabled,
+        button[data-testid="baseButton-secondary"]:disabled,
+        button[data-testid="baseButton-primary"]:disabled {
+            background: #1e293b !important;
+            color: #cbd5e1 !important;
+            border-color: rgba(148, 163, 184, 0.35) !important;
+            opacity: 0.78 !important;
+            box-shadow: none !important;
+        }
+        .stButton > button:disabled *,
+        .stDownloadButton > button:disabled *,
+        button[kind]:disabled *,
+        button[data-testid="baseButton-secondary"]:disabled *,
+        button[data-testid="baseButton-primary"]:disabled * {
+            color: #cbd5e1 !important;
+        }
         .wc-shell {
             border: 1px solid var(--wc-line);
             border-radius: 22px;
