@@ -28,16 +28,25 @@ with st.sidebar:
 
     if "usuario_id" in st.session_state:
         st.success(f"Sesión activa: {st.session_state.get('nombre', '')}")
-        st.caption("Tu nombre ya quedó confirmado para esta sesión.")
+        st.caption("Ya puedes ir a Pronósticos para ingresar o editar tus resultados.")
+        if st.button("Cerrar sesión", use_container_width=True):
+            st.session_state.pop("usuario_id", None)
+            st.session_state.pop("nombre", None)
+            st.session_state.pop("nombre_pendiente", None)
+            st.rerun()
     else:
         nombre = st.text_input("Tu nombre", value=st.session_state.get("nombre_input", ""), max_chars=80)
 
-        if st.button("Continuar", use_container_width=True) and nombre.strip():
+        if st.button("Entrar o registrarme", use_container_width=True) and nombre.strip():
             try:
                 nombre_normalizado = normalizar_nombre_participante(nombre)
-                if buscar_usuario_por_nombre(nombre_normalizado):
+                user = buscar_usuario_por_nombre(nombre_normalizado)
+                if user:
+                    st.session_state["usuario_id"] = user.id
+                    st.session_state["nombre"] = user.nombre
                     st.session_state.pop("nombre_pendiente", None)
-                    st.error("Ese nombre ya está registrado. Para evitar duplicados, elige otro nombre.")
+                    st.success(f"Sesión iniciada: {user.nombre}")
+                    st.rerun()
                 else:
                     st.session_state["nombre_pendiente"] = nombre_normalizado
             except Exception as exc:
@@ -46,9 +55,9 @@ with st.sidebar:
         if st.session_state.get("nombre_pendiente"):
             nombre_pendiente = st.session_state["nombre_pendiente"]
             st.warning(f"¿Estás seguro de que tu nombre será '{nombre_pendiente}'?")
-            st.caption("Después de confirmarlo no podrás volver a registrar ese mismo nombre.")
+            st.caption("Si ya participaste antes, escribe exactamente el mismo nombre para iniciar sesión.")
             col_confirm, col_cancel = st.columns(2)
-            if col_confirm.button("Sí, confirmar", use_container_width=True):
+            if col_confirm.button("Sí, crear participante", use_container_width=True):
                 try:
                     user = crear_usuario(nombre_pendiente)
                     st.session_state["usuario_id"] = user.id
@@ -177,4 +186,4 @@ with right:
     )
 
 if "usuario_id" not in st.session_state:
-    st.info("Ingresa tu nombre en la barra lateral, confirma que está bien escrito y luego abre la página Pronósticos.")
+    st.info("Ingresa tu nombre en la barra lateral. Si ya existe, iniciarás sesión; si es nuevo, la app pedirá confirmación.")
