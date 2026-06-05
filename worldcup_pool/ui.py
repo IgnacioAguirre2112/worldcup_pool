@@ -63,6 +63,8 @@ FLAG_ALIASES = {
     "scotland": "escocia",
     "senegal": "senegal",
     "sudafrica": "sudafrica",
+    "suecia": "suecia",
+    "sweden": "suecia",
     "suiza": "suiza",
     "tunez": "tunez",
     "turquia": "turquia",
@@ -123,6 +125,22 @@ def inject_theme() -> None:
         }
         [data-testid="stSidebar"] * {
             color: var(--wc-text);
+        }
+        [data-testid="stSidebar"] input,
+        [data-testid="stSidebar"] textarea,
+        [data-testid="stSidebar"] input *,
+        [data-testid="stSidebar"] textarea * {
+            color: #0f172a !important;
+            caret-color: #0f172a !important;
+        }
+        [data-testid="stSidebar"] input::placeholder,
+        [data-testid="stSidebar"] textarea::placeholder {
+            color: #64748b !important;
+            opacity: 1;
+        }
+        [data-testid="stSidebar"] button:disabled,
+        [data-testid="stSidebar"] button:disabled * {
+            color: #64748b !important;
         }
         .wc-shell {
             border: 1px solid var(--wc-line);

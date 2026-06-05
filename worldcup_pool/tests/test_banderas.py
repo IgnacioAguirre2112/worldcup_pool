@@ -12,6 +12,9 @@ class BanderasTest(unittest.TestCase):
     def test_bandera_escocia_resuelve(self) -> None:
         self.assertTrue(flag_data_uri("Escocia"))
 
+    def test_bandera_suecia_resuelve(self) -> None:
+        self.assertTrue(flag_data_uri("Suecia"))
+
 
 if __name__ == "__main__":
     unittest.main()
