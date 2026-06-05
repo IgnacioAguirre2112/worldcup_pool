@@ -23,7 +23,7 @@ DB_PATH.parent.mkdir(exist_ok=True)
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
-FASES = ["Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semifinal", "Tercer Lugar", "Final"]
+FASES = ["Prueba", "Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semifinal", "Tercer Lugar", "Final"]
 
 
 def init_db() -> None:
@@ -39,6 +39,8 @@ def ensure_fixture_loaded() -> None:
         seed_fixture_from_csv()
     elif partidos < 100 and pronosticos == 0:
         seed_fixture_from_csv(force=True)
+    else:
+        sync_missing_fixture_from_csv()
 
 
 def chile_to_utc_naive(fecha: str, hora: str) -> datetime:
@@ -66,6 +68,38 @@ def seed_fixture_from_csv(force: bool = False) -> int:
                 db.add(
                     Partido(
                         fecha_hora_utc=chile_to_utc_naive(row["fecha"], row["hora_chile"]),
+                        fase=row["fase"],
+                        equipo_local=row["local"],
+                        equipo_visita=row["visita"],
+                    )
+                )
+                creados += 1
+        db.commit()
+        return creados
+
+
+def sync_missing_fixture_from_csv() -> int:
+    if not FIXTURE_PATH.exists():
+        return 0
+    with SessionLocal() as db:
+        creados = 0
+        with FIXTURE_PATH.open(encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                fecha_hora_utc = chile_to_utc_naive(row["fecha"], row["hora_chile"])
+                existe = db.scalar(
+                    select(Partido.id).where(
+                        Partido.fecha_hora_utc == fecha_hora_utc,
+                        Partido.fase == row["fase"],
+                        Partido.equipo_local == row["local"],
+                        Partido.equipo_visita == row["visita"],
+                    )
+                )
+                if existe:
+                    continue
+                db.add(
+                    Partido(
+                        fecha_hora_utc=fecha_hora_utc,
                         fase=row["fase"],
                         equipo_local=row["local"],
                         equipo_visita=row["visita"],

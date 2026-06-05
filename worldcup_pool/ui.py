@@ -25,6 +25,7 @@ FLAG_ALIASES = {
     "cabo verde": "cabo_verde",
     "canada": "canada",
     "chequia": "chequia",
+    "chile": "chile",
     "republica checa": "chequia",
     "colombia": "colombia",
     "corea del sur": "corea_sur",
