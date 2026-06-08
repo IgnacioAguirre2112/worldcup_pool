@@ -47,9 +47,9 @@ def database_url() -> str:
     url = get_secret_value("DATABASE_URL")
     if url:
         if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+            url = url.replace("postgres://", "postgresql+pg8000://", 1)
         elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            url = url.replace("postgresql://", "postgresql+pg8000://", 1)
         return url
     DB_PATH.parent.mkdir(exist_ok=True)
     return f"sqlite:///{DB_PATH}"

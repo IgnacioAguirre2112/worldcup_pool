@@ -3,6 +3,7 @@ pandas>=2.2
 plotly>=5.22
 openpyxl>=3.1
 SQLAlchemy>=2.0
+pg8000>=1.31
 streamlit-autorefresh>=1.0.1
 passlib>=1.7
 tzdata>=2024.1
