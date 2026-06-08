@@ -11,6 +11,7 @@ from database import (
     normalizar_nombre_participante,
     ranking_dataframe,
     utc_to_chile,
+    using_persistent_database,
 )
 from models import Partido, Usuario
 from ui import flag_data_uri, flag_img, inject_theme
@@ -19,6 +20,12 @@ from ui import flag_data_uri, flag_img, inject_theme
 st.set_page_config(page_title="Mundial 2026", page_icon="⚽", layout="wide")
 inject_theme()
 init_db()
+
+if not using_persistent_database():
+    st.warning(
+        "La app está usando SQLite local. En Streamlit Cloud los participantes pueden borrarse al hacer reboot. "
+        "Configura DATABASE_URL en Secrets con la conexión de Neon para activar persistencia."
+    )
 
 with st.sidebar:
     st.markdown("## FIFA WORLD CUP 2026")

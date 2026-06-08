@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -19,8 +20,48 @@ FIXTURE_PATH = ROOT / "uploads" / "fixture_mundial_2026.csv"
 CHILE_TZ = ZoneInfo("America/Santiago")
 UTC_TZ = ZoneInfo("UTC")
 
-DB_PATH.parent.mkdir(exist_ok=True)
-engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
+
+def get_secret_value(key: str) -> str | None:
+    if os.environ.get(key):
+        return os.environ[key]
+    try:
+        import streamlit as st
+
+        value = st.secrets.get(key)
+        return str(value) if value else None
+    except Exception:
+        return None
+
+
+def using_persistent_database() -> bool:
+    return not IS_SQLITE
+
+
+def database_status_label() -> str:
+    if IS_SQLITE:
+        return "SQLite local (no persistente en Streamlit Cloud)"
+    return "Postgres externo (persistente)"
+
+
+def database_url() -> str:
+    url = get_secret_value("DATABASE_URL")
+    if url:
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return url
+    DB_PATH.parent.mkdir(exist_ok=True)
+    return f"sqlite:///{DB_PATH}"
+
+
+DATABASE_URL = database_url()
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if IS_SQLITE else {},
+    pool_pre_ping=not IS_SQLITE,
+)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 FASES = ["Prueba", "Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semifinal", "Tercer Lugar", "Final"]
@@ -234,3 +275,37 @@ def ranking_dataframe():
         df = df.sort_values(["Total", "Exactos", "Parciales"], ascending=False).reset_index(drop=True)
         df.insert(0, "Posición", range(1, len(df) + 1))
     return df
+
+
+def pronosticos_publicos_dataframe():
+    import pandas as pd
+
+    rows = []
+    ahora = datetime.utcnow()
+    with SessionLocal() as db:
+        pronosticos = db.scalars(
+            select(Pronostico)
+            .join(Pronostico.usuario)
+            .join(Pronostico.partido)
+            .order_by(Partido.fecha_hora_utc, Partido.equipo_local, Usuario.nombre)
+        ).all()
+        for pronostico in pronosticos:
+            partido = pronostico.partido
+            cerrado = ahora >= partido.fecha_hora_utc
+            hora_chile = utc_to_chile(partido.fecha_hora_utc)
+            rows.append(
+                {
+                    "Fecha": hora_chile.strftime("%Y-%m-%d %H:%M"),
+                    "Fase": partido.fase,
+                    "Partido": f"{partido.equipo_local} vs {partido.equipo_visita}",
+                    "Participante": pronostico.usuario.nombre,
+                    "Pronóstico": (
+                        f"{pronostico.goles_local_pronosticado} - {pronostico.goles_visita_pronosticado}"
+                        if cerrado
+                        else "Oculto hasta el inicio"
+                    ),
+                    "Estado": "Cerrado" if cerrado else "Abierto",
+                    "Ingresado": pronostico.fecha_ingreso.strftime("%Y-%m-%d %H:%M"),
+                }
+            )
+    return pd.DataFrame(rows, columns=["Fecha", "Fase", "Partido", "Participante", "Pronóstico", "Estado", "Ingresado"])
