@@ -19,6 +19,11 @@ if not usuario_id:
 
 with SessionLocal() as db:
     partidos = db.scalars(select(Partido).order_by(Partido.fecha_hora_utc)).all()
+    pronosticos_existentes = {
+        p.partido_id: p
+        for p in db.scalars(select(Pronostico).where(Pronostico.usuario_id == usuario_id)).all()
+    }
+    bonus = db.get(PronosticoBonus, usuario_id)
 
 if not partidos:
     st.info("Aún no hay fixture cargado.")
@@ -51,10 +56,7 @@ for partido in partidos:
             st.caption(f"{partido.fase} · {hora_chile:%Y-%m-%d %H:%M} Chile")
 
         with form:
-            with SessionLocal() as db:
-                existente = db.scalar(
-                    select(Pronostico).where(Pronostico.usuario_id == usuario_id, Pronostico.partido_id == partido.id)
-                )
+            existente = pronosticos_existentes.get(partido.id)
             gl = st.number_input(
                 f"Goles {partido.equipo_local}",
                 0,
@@ -83,6 +85,7 @@ for partido in partidos:
 st.divider()
 st.subheader("Bonus")
 st.caption("Campeón +5 · Subcampeón +3 · Tercer lugar +1 · Goleador +3")
+st.caption("Disponible hasta el 28-06-2026 a las 00:00 hora Chile.")
 
 equipos = [""] + equipos_disponibles()
 
@@ -91,19 +94,13 @@ def index_or_zero(options: list[str], value: str | None) -> int:
     return options.index(value) if value in options else 0
 
 
-with SessionLocal() as db:
-    bonus = db.get(PronosticoBonus, usuario_id)
-
 if bonus_bloqueado():
     st.warning("Pronósticos bonus cerrados")
-    st.write(
-        {
-            "Campeón": bonus.campeon if bonus else "",
-            "Subcampeón": bonus.subcampeon if bonus else "",
-            "Tercer lugar": bonus.tercer_lugar if bonus else "",
-            "Goleador": bonus.goleador if bonus else "",
-        }
-    )
+    b1, b2, b3, b4 = st.columns(4)
+    b1.metric("Campeón", bonus.campeon if bonus and bonus.campeon else "-")
+    b2.metric("Subcampeón", bonus.subcampeon if bonus and bonus.subcampeon else "-")
+    b3.metric("Tercer lugar", bonus.tercer_lugar if bonus and bonus.tercer_lugar else "-")
+    b4.metric("Goleador", bonus.goleador if bonus and bonus.goleador else "-")
 else:
     b1, b2, b3, b4 = st.columns(4)
     campeon = b1.selectbox("Campeón", equipos, index=index_or_zero(equipos, bonus.campeon if bonus else None))

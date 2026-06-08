@@ -189,6 +189,29 @@ def inject_theme() -> None:
         button[data-testid="baseButton-primary"]:disabled * {
             color: #cbd5e1 !important;
         }
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] label *,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span {
+            color: #e5edff !important;
+        }
+        [data-testid="stRadio"] [role="radiogroup"] {
+            gap: 18px;
+        }
+        [data-testid="stRadio"] [role="radio"] {
+            background: rgba(7, 20, 48, 0.62);
+            border: 1px solid rgba(84, 144, 255, 0.32);
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+        [data-testid="stRadio"] [role="radio"][aria-checked="true"] {
+            border-color: rgba(57, 242, 123, 0.85);
+            background: rgba(57, 242, 123, 0.14);
+        }
+        [data-testid="stRadio"] [role="radio"][aria-checked="true"] * {
+            color: #ffffff !important;
+            font-weight: 800;
+        }
         .wc-shell {
             border: 1px solid var(--wc-line);
             border-radius: 22px;

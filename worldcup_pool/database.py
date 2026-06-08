@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import joinedload, selectinload, sessionmaker
 
 from models import Base, Partido, Pronostico, PronosticoBonus, ResultadoBonus, Usuario
 from scoring import calcular_puntaje
@@ -21,6 +21,7 @@ DB_PATH = ROOT / "data" / "mundial2026.db"
 FIXTURE_PATH = ROOT / "uploads" / "fixture_mundial_2026.csv"
 CHILE_TZ = ZoneInfo("America/Santiago")
 UTC_TZ = ZoneInfo("UTC")
+BONUS_DEADLINE_CHILE = datetime(2026, 6, 28, 0, 0, tzinfo=CHILE_TZ)
 
 
 def get_secret_value(key: str) -> str | None:
@@ -81,11 +82,17 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 FASES = ["Prueba", "Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semifinal", "Tercer Lugar", "Final"]
+_DB_INITIALIZED_ENGINE_ID: int | None = None
 
 
 def init_db() -> None:
+    global _DB_INITIALIZED_ENGINE_ID
+    current_engine_id = id(engine)
+    if _DB_INITIALIZED_ENGINE_ID == current_engine_id:
+        return
     Base.metadata.create_all(engine)
     ensure_fixture_loaded()
+    _DB_INITIALIZED_ENGINE_ID = current_engine_id
 
 
 def ensure_fixture_loaded() -> None:
@@ -236,8 +243,7 @@ def primera_fecha_mundial() -> datetime | None:
 
 
 def bonus_bloqueado() -> bool:
-    primera = primera_fecha_mundial()
-    return bool(primera and datetime.utcnow() >= primera)
+    return datetime.now(CHILE_TZ) >= BONUS_DEADLINE_CHILE
 
 
 def equipos_disponibles() -> list[str]:
@@ -267,7 +273,12 @@ def ranking_dataframe():
 
     rows = []
     with SessionLocal() as db:
-        usuarios = db.scalars(select(Usuario).order_by(Usuario.nombre)).all()
+        usuarios = db.scalars(
+            select(Usuario)
+            .options(selectinload(Usuario.pronosticos).selectinload(Pronostico.partido))
+            .order_by(Usuario.nombre)
+        ).all()
+        bonus_por_usuario = {b.usuario_id: b for b in db.scalars(select(PronosticoBonus)).all()}
         oficial = db.get(ResultadoBonus, 1)
         for u in usuarios:
             total = exactos = parciales = bonus = 0
@@ -282,7 +293,7 @@ def ranking_dataframe():
                     total += puntos
                     exactos += tipo == "exacto"
                     parciales += tipo in {"parcial", "parcial+diferencia"}
-            bonus = calcular_bonus_usuario(db.get(PronosticoBonus, u.id), oficial)
+            bonus = calcular_bonus_usuario(bonus_por_usuario.get(u.id), oficial)
             total += bonus
             rows.append({"Participante": u.nombre, "Exactos": exactos, "Parciales": parciales, "Bonus": bonus, "Total": total})
 
@@ -301,6 +312,7 @@ def pronosticos_publicos_dataframe():
     with SessionLocal() as db:
         pronosticos = db.scalars(
             select(Pronostico)
+            .options(joinedload(Pronostico.usuario), joinedload(Pronostico.partido))
             .join(Pronostico.usuario)
             .join(Pronostico.partido)
             .order_by(Partido.fecha_hora_utc, Partido.equipo_local, Usuario.nombre)
