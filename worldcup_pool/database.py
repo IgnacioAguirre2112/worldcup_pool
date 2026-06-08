@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import csv
 import os
+import ssl
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine, func, select
@@ -46,20 +48,34 @@ def database_status_label() -> str:
 def database_url() -> str:
     url = get_secret_value("DATABASE_URL")
     if url:
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+pg8000://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+pg8000://", 1)
-        return url
+        return normalize_postgres_url(url)
     DB_PATH.parent.mkdir(exist_ok=True)
     return f"sqlite:///{DB_PATH}"
 
 
+def normalize_postgres_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+pg8000://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+pg8000://", 1)
+    elif url.startswith("postgresql+psycopg2://"):
+        url = url.replace("postgresql+psycopg2://", "postgresql+pg8000://", 1)
+
+    if url.startswith("postgresql+pg8000://"):
+        parts = urlsplit(url)
+        # Neon strings often include sslmode/channel_binding, which pg8000 does
+        # not accept as direct DB-API keyword arguments. SSL is enabled below.
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, "", parts.fragment))
+
+    return url
+
+
 DATABASE_URL = database_url()
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
+CONNECT_ARGS = {"check_same_thread": False} if IS_SQLITE else {"ssl_context": ssl.create_default_context()}
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if IS_SQLITE else {},
+    connect_args=CONNECT_ARGS,
     pool_pre_ping=not IS_SQLITE,
 )
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
