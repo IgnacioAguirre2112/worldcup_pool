@@ -24,6 +24,23 @@ class FixturePruebaTest(unittest.TestCase):
         self.assertIsNotNone(partido)
         self.assertEqual(database.utc_to_chile(partido.fecha_hora_utc).strftime("%Y-%m-%d %H:%M"), "2026-06-05 18:00")
 
+    def test_fixture_incluye_partido_prueba_brasil_argentina(self) -> None:
+        database.init_db()
+
+        with database.SessionLocal() as db:
+            partido = (
+                db.query(Partido)
+                .filter(
+                    Partido.fase == "Prueba",
+                    Partido.equipo_local == "Brasil",
+                    Partido.equipo_visita == "Argentina",
+                )
+                .one_or_none()
+            )
+
+        self.assertIsNotNone(partido)
+        self.assertEqual(database.utc_to_chile(partido.fecha_hora_utc).strftime("%Y-%m-%d %H:%M"), "2026-06-09 12:00")
+
 
 if __name__ == "__main__":
     unittest.main()
