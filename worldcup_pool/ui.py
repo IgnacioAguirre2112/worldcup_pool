@@ -139,6 +139,41 @@ def inject_theme() -> None:
             color: #64748b !important;
             opacity: 1;
         }
+        [data-testid="stTextInput"] label,
+        [data-testid="stNumberInput"] label,
+        [data-testid="stSelectbox"] label,
+        [data-testid="stTextArea"] label,
+        [data-testid="stDateInput"] label,
+        [data-testid="stTimeInput"] label,
+        [data-testid="stTextInput"] label *,
+        [data-testid="stNumberInput"] label *,
+        [data-testid="stSelectbox"] label *,
+        [data-testid="stTextArea"] label *,
+        [data-testid="stDateInput"] label *,
+        [data-testid="stTimeInput"] label * {
+            color: #e5edff !important;
+            font-weight: 800 !important;
+        }
+        [data-testid="stTextInput"] input,
+        [data-testid="stNumberInput"] input,
+        [data-testid="stTextArea"] textarea,
+        [data-testid="stDateInput"] input,
+        [data-testid="stTimeInput"] input,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            border-color: rgba(148, 163, 184, 0.65) !important;
+        }
+        [data-testid="stTextInput"] input::placeholder,
+        [data-testid="stTextArea"] textarea::placeholder {
+            color: #64748b !important;
+            opacity: 1;
+        }
+        [data-testid="stSelectbox"] div[data-baseweb="select"] *,
+        [data-baseweb="popover"] li,
+        [data-baseweb="popover"] li * {
+            color: #0f172a !important;
+        }
         [data-testid="stSidebar"] button:disabled,
         [data-testid="stSidebar"] button:disabled * {
             color: #64748b !important;
@@ -332,6 +367,19 @@ def inject_theme() -> None:
             border: 1px solid var(--wc-line);
             border-radius: 10px;
             overflow: hidden;
+        }
+        div[data-testid="stDataFrame"] * {
+            color: #0f172a !important;
+        }
+        div[data-testid="stDataFrame"] [role="columnheader"],
+        div[data-testid="stDataFrame"] [role="columnheader"] * {
+            color: #334155 !important;
+            font-weight: 800 !important;
+        }
+        div[data-testid="stDataFrame"] [role="gridcell"],
+        div[data-testid="stDataFrame"] [role="gridcell"] * {
+            color: #071225 !important;
+            font-weight: 600 !important;
         }
         @media (max-width: 800px) {
             .wc-match {
