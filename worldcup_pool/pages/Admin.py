@@ -51,7 +51,35 @@ with tab1:
     for partido in partidos:
         hora_chile = utc_to_chile(partido.fecha_hora_utc)
         with st.expander(f"{partido.id} · {partido.equipo_local} vs {partido.equipo_visita} · {hora_chile:%Y-%m-%d %H:%M}"):
-            if st.button("Eliminar", key=f"del_{partido.id}"):
+            st.caption("Edita este partido para reemplazar placeholders por equipos reales sin hacer reboot.")
+            edit_col1, edit_col2 = st.columns(2)
+            nueva_fecha = edit_col1.date_input("Fecha Chile", value=hora_chile.date(), key=f"fecha_{partido.id}")
+            nueva_hora = edit_col2.time_input("Hora Chile", value=hora_chile.time(), key=f"hora_{partido.id}")
+            nueva_fase = st.selectbox(
+                "Fase",
+                FASES,
+                index=FASES.index(partido.fase) if partido.fase in FASES else 0,
+                key=f"fase_{partido.id}",
+            )
+            nuevo_local = st.text_input("Equipo local", value=partido.equipo_local, key=f"local_{partido.id}")
+            nuevo_visita = st.text_input("Equipo visita", value=partido.equipo_visita, key=f"visita_{partido.id}")
+
+            save_col, delete_col = st.columns(2)
+            if save_col.button("Guardar cambios", key=f"save_{partido.id}", use_container_width=True):
+                if not nuevo_local.strip() or not nuevo_visita.strip():
+                    st.error("El equipo local y visita no pueden estar vacíos.")
+                else:
+                    with SessionLocal() as db:
+                        obj = db.get(Partido, partido.id)
+                        obj.fecha_hora_utc = chile_to_utc_naive(nueva_fecha.isoformat(), nueva_hora.strftime("%H:%M"))
+                        obj.fase = nueva_fase
+                        obj.equipo_local = nuevo_local.strip()
+                        obj.equipo_visita = nuevo_visita.strip()
+                        db.commit()
+                    st.success("Partido actualizado")
+                    st.rerun()
+
+            if delete_col.button("Eliminar", key=f"del_{partido.id}", use_container_width=True):
                 with SessionLocal() as db:
                     obj = db.get(Partido, partido.id)
                     db.delete(obj)
