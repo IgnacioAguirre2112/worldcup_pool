@@ -17,11 +17,11 @@ if df.empty:
 c1, c2, c3 = st.columns(3)
 c1.metric("Promedio de puntos", round(df["Total"].mean(), 2))
 c2.metric("Máximo exactos", int(df["Exactos"].max()))
-c3.metric("Máximo parciales", int(df["Parciales"].max()))
+c3.metric("Máximo ganadores", int(df["Ganadores"].max()))
 
 st.plotly_chart(px.bar(df, x="Participante", y="Total", title="Ranking histórico"), use_container_width=True)
 st.plotly_chart(
-    px.bar(df, x="Participante", y=["Exactos", "Parciales", "Bonus"], barmode="group", title="Distribución de puntos"),
+    px.bar(df, x="Participante", y=["Exactos", "Ganadores", "Bonus"], barmode="group", title="Distribución de puntos"),
     use_container_width=True,
 )
 st.plotly_chart(

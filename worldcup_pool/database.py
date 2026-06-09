@@ -281,7 +281,7 @@ def ranking_dataframe():
         bonus_por_usuario = {b.usuario_id: b for b in db.scalars(select(PronosticoBonus)).all()}
         oficial = db.get(ResultadoBonus, 1)
         for u in usuarios:
-            total = exactos = parciales = bonus = 0
+            total = exactos = ganadores = bonus = 0
             for p in u.pronosticos:
                 if p.partido.resultado_oficial_cargado:
                     puntos, tipo = calcular_puntaje(
@@ -292,14 +292,14 @@ def ranking_dataframe():
                     )
                     total += puntos
                     exactos += tipo == "exacto"
-                    parciales += tipo in {"parcial", "parcial+diferencia"}
+                    ganadores += tipo == "ganador"
             bonus = calcular_bonus_usuario(bonus_por_usuario.get(u.id), oficial)
             total += bonus
-            rows.append({"Participante": u.nombre, "Exactos": exactos, "Parciales": parciales, "Bonus": bonus, "Total": total})
+            rows.append({"Participante": u.nombre, "Exactos": exactos, "Ganadores": ganadores, "Bonus": bonus, "Total": total})
 
-    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Parciales", "Bonus", "Total"])
+    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Ganadores", "Bonus", "Total"])
     if not df.empty:
-        df = df.sort_values(["Total", "Exactos", "Parciales"], ascending=False).reset_index(drop=True)
+        df = df.sort_values(["Total", "Exactos", "Ganadores"], ascending=False).reset_index(drop=True)
         df.insert(0, "Posición", range(1, len(df) + 1))
     return df
 

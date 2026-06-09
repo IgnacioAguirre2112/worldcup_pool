@@ -7,15 +7,11 @@ def signo(goles_local: int, goles_visita: int) -> int:
 
 
 def calcular_puntaje(glp: int, gvp: int, glo: int, gvo: int) -> tuple[int, str]:
-    """Retorna (puntaje, tipo): exacto, parcial, diferencia o ninguno."""
+    """Retorna (puntaje, tipo): exacto, ganador, goles o ninguno."""
     if glp == glo and gvp == gvo:
         return 5, "exacto"
-    puntos = 0
-    tipo = "ninguno"
-    if signo(glp, gvp) == signo(glo, gvo):
-        puntos = 3
-        tipo = "parcial"
-    if (glp - gvp) == (glo - gvo):
-        puntos += 1
-        tipo = "diferencia" if tipo == "ninguno" else "parcial+diferencia"
-    return puntos, tipo
+    if signo(glo, gvo) != 0 and signo(glp, gvp) == signo(glo, gvo):
+        return 3, "ganador"
+    if (glp + gvp) == (glo + gvo):
+        return 1, "goles"
+    return 0, "ninguno"
