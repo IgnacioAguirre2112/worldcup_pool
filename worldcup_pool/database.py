@@ -22,6 +22,8 @@ FIXTURE_PATH = ROOT / "uploads" / "fixture_mundial_2026.csv"
 CHILE_TZ = ZoneInfo("America/Santiago")
 UTC_TZ = ZoneInfo("UTC")
 BONUS_DEADLINE_CHILE = datetime(2026, 6, 28, 0, 0, tzinfo=CHILE_TZ)
+EMPATE_RULE_EFFECTIVE_CHILE = datetime(2026, 6, 12, 9, 50, tzinfo=CHILE_TZ)
+EMPATE_RULE_EFFECTIVE_UTC = EMPATE_RULE_EFFECTIVE_CHILE.astimezone(UTC_TZ).replace(tzinfo=None)
 
 
 def get_secret_value(key: str) -> str | None:
@@ -281,7 +283,7 @@ def ranking_dataframe():
         bonus_por_usuario = {b.usuario_id: b for b in db.scalars(select(PronosticoBonus)).all()}
         oficial = db.get(ResultadoBonus, 1)
         for u in usuarios:
-            total = exactos = ganadores = cant_goles = bonus = 0
+            total = exactos = resultado = cant_goles = bonus = 0
             for p in u.pronosticos:
                 if p.partido.resultado_oficial_cargado:
                     puntos, tipo = calcular_puntaje(
@@ -289,10 +291,11 @@ def ranking_dataframe():
                         p.goles_visita_pronosticado,
                         p.partido.goles_local,
                         p.partido.goles_visita,
+                        empate_correcto_3=p.partido.fecha_hora_utc >= EMPATE_RULE_EFFECTIVE_UTC,
                     )
                     total += puntos
                     exactos += tipo == "exacto"
-                    ganadores += tipo == "ganador"
+                    resultado += tipo == "ganador"
                     cant_goles += tipo == "goles"
             bonus = calcular_bonus_usuario(bonus_por_usuario.get(u.id), oficial)
             total += bonus
@@ -300,16 +303,16 @@ def ranking_dataframe():
                 {
                     "Participante": u.nombre,
                     "Exactos": exactos,
-                    "Ganadores": ganadores,
+                    "Resultado": resultado,
                     "Cant. goles": cant_goles,
                     "Bonus": bonus,
                     "Total": total,
                 }
             )
 
-    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Ganadores", "Cant. goles", "Bonus", "Total"])
+    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Resultado", "Cant. goles", "Bonus", "Total"])
     if not df.empty:
-        df = df.sort_values(["Total", "Exactos", "Ganadores", "Cant. goles"], ascending=False).reset_index(drop=True)
+        df = df.sort_values(["Total", "Exactos", "Resultado", "Cant. goles"], ascending=False).reset_index(drop=True)
         df.insert(0, "Posición", range(1, len(df) + 1))
     return df
 

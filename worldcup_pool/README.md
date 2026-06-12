@@ -8,7 +8,7 @@ Aplicación Streamlit para administrar una competencia de pronósticos del Mundi
 - Ingreso de participantes por nombre, listo para compartir por link público.
 - Pronósticos por partido editables solo hasta la hora de inicio.
 - Horarios mostrados en hora de Chile y guardados internamente en UTC.
-- Ranking automático con puntaje excluyente: exacto 5, ganador correcto 3, cantidad total de goles 1, sin acierto 0.
+- Ranking automático con puntaje excluyente: exacto 5, resultado correcto 3 (ganador o empate), cantidad total de goles 1, sin acierto 0.
 - Bonus: Campeón +5, Subcampeón +3, Tercer lugar +1, Goleador +3.
 - Panel admin para cargar resultados, bonus oficiales, exportar datos y recargar fixture.
 - Interfaz oscura estilo Mundial 2026 con banderas desde `scripts/assets/flags.zip`.

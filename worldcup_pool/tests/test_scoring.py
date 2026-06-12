@@ -18,8 +18,11 @@ class ScoringTest(unittest.TestCase):
     def test_empate_pronosticado_no_suma_ganador_si_resultado_tiene_ganador(self) -> None:
         self.assertEqual(calcular_puntaje(2, 2, 3, 1), (1, "goles"))
 
-    def test_empate_oficial_no_suma_tres_por_ganador(self) -> None:
+    def test_empate_oficial_antiguo_no_suma_tres_por_ganador(self) -> None:
         self.assertEqual(calcular_puntaje(2, 0, 1, 1), (1, "goles"))
+
+    def test_empate_correcto_nuevo_suma_tres(self) -> None:
+        self.assertEqual(calcular_puntaje(1, 1, 2, 2, empate_correcto_3=True), (3, "ganador"))
 
     def test_sin_acierto_suma_cero(self) -> None:
         self.assertEqual(calcular_puntaje(2, 0, 0, 1), (0, "ninguno"))

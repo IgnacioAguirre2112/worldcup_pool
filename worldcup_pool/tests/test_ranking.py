@@ -51,6 +51,53 @@ class RankingTest(unittest.TestCase):
         self.assertEqual(int(df.loc[0, "Cant. goles"]), 1)
         self.assertEqual(int(df.loc[0, "Total"]), 1)
 
+    def test_empate_correcto_aplica_solo_despues_del_corte(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Empates")
+            antes = Partido(
+                fecha_hora_utc=database.EMPATE_RULE_EFFECTIVE_UTC - timedelta(minutes=1),
+                fase="Prueba",
+                equipo_local="Chile",
+                equipo_visita="Brasil",
+                goles_local=2,
+                goles_visita=2,
+                resultado_oficial_cargado=True,
+            )
+            despues = Partido(
+                fecha_hora_utc=database.EMPATE_RULE_EFFECTIVE_UTC + timedelta(minutes=1),
+                fase="Prueba",
+                equipo_local="Argentina",
+                equipo_visita="Uruguay",
+                goles_local=2,
+                goles_visita=2,
+                resultado_oficial_cargado=True,
+            )
+            db.add_all([usuario, antes, despues])
+            db.commit()
+            db.add_all(
+                [
+                    Pronostico(
+                        usuario_id=usuario.id,
+                        partido_id=antes.id,
+                        goles_local_pronosticado=1,
+                        goles_visita_pronosticado=1,
+                    ),
+                    Pronostico(
+                        usuario_id=usuario.id,
+                        partido_id=despues.id,
+                        goles_local_pronosticado=1,
+                        goles_visita_pronosticado=1,
+                    ),
+                ]
+            )
+            db.commit()
+
+        df = database.ranking_dataframe()
+
+        self.assertEqual(int(df.loc[0, "Resultado"]), 1)
+        self.assertEqual(int(df.loc[0, "Cant. goles"]), 0)
+        self.assertEqual(int(df.loc[0, "Total"]), 3)
+
 
 if __name__ == "__main__":
     unittest.main()
