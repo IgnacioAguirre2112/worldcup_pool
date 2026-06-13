@@ -6,7 +6,7 @@ id_partido,fecha,hora_chile,fase,grupo,local,visita
 5,2026-06-13,15:00,Fase de grupos,B,Qatar,Suiza
 6,2026-06-13,18:00,Fase de grupos,C,Brasil,Marruecos
 7,2026-06-13,21:00,Fase de grupos,C,Haití,Escocia
-8,2026-06-13,00:00,Fase de grupos,D,Australia,Turquía
+8,2026-06-14,00:00,Fase de grupos,D,Australia,Turquía
 9,2026-06-14,13:00,Fase de grupos,E,Alemania,Curazao
 10,2026-06-14,16:00,Fase de grupos,F,Países Bajos,Japón
 11,2026-06-14,19:00,Fase de grupos,E,Costa de Marfil,Ecuador
@@ -18,7 +18,7 @@ id_partido,fecha,hora_chile,fase,grupo,local,visita
 17,2026-06-16,15:00,Fase de grupos,I,Francia,Senegal
 18,2026-06-16,18:00,Fase de grupos,I,Irak,Noruega
 19,2026-06-16,21:00,Fase de grupos,J,Argentina,Argelia
-20,2026-06-16,00:00,Fase de grupos,J,Austria,Jordania
+20,2026-06-17,00:00,Fase de grupos,J,Austria,Jordania
 21,2026-06-17,13:00,Fase de grupos,K,Portugal,RD de Congo
 22,2026-06-17,16:00,Fase de grupos,L,Inglaterra,Croacia
 23,2026-06-17,19:00,Fase de grupos,L,Ghana,Panamá
@@ -34,7 +34,7 @@ id_partido,fecha,hora_chile,fase,grupo,local,visita
 33,2026-06-20,13:00,Fase de grupos,F,Países Bajos,Suecia
 34,2026-06-20,16:00,Fase de grupos,E,Alemania,Costa de Marfil
 35,2026-06-20,20:00,Fase de grupos,E,Ecuador,Curazao
-36,2026-06-20,00:00,Fase de grupos,F,Túnez,Japón
+36,2026-06-21,00:00,Fase de grupos,F,Túnez,Japón
 37,2026-06-21,12:00,Fase de grupos,H,España,Arabia Saudita
 38,2026-06-21,15:00,Fase de grupos,G,Bélgica,Irán
 39,2026-06-21,18:00,Fase de grupos,H,Uruguay,Cabo Verde

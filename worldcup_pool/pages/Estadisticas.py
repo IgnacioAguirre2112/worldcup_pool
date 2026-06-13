@@ -14,18 +14,19 @@ if df.empty:
     st.info("Sin datos suficientes.")
     st.stop()
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Promedio de puntos", round(df["Total"].mean(), 2))
 c2.metric("Máximo exactos", int(df["Exactos"].max()))
 c3.metric("Máximo resultado", int(df["Resultado"].max()))
 c4.metric("Máximo cant. goles", int(df["Cant. goles"].max()))
+c5.metric("Máximo sin puntaje", int(df["Sin puntaje"].max()))
 
 st.plotly_chart(px.bar(df, x="Participante", y="Total", title="Ranking histórico"), use_container_width=True)
 st.plotly_chart(
     px.bar(
         df,
         x="Participante",
-        y=["Exactos", "Resultado", "Cant. goles", "Bonus"],
+        y=["Exactos", "Resultado", "Cant. goles", "Sin puntaje", "Bonus"],
         barmode="group",
         title="Distribución de puntos",
     ),

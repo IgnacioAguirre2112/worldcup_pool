@@ -48,8 +48,39 @@ class RankingTest(unittest.TestCase):
         df = database.ranking_dataframe()
 
         self.assertIn("Cant. goles", df.columns)
+        self.assertIn("Sin puntaje", df.columns)
         self.assertEqual(int(df.loc[0, "Cant. goles"]), 1)
+        self.assertEqual(int(df.loc[0, "Sin puntaje"]), 0)
         self.assertEqual(int(df.loc[0, "Total"]), 1)
+
+    def test_ranking_cuenta_partidos_sin_puntaje(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Cero")
+            partido = Partido(
+                fecha_hora_utc=datetime.utcnow() - timedelta(days=1),
+                fase="Prueba",
+                equipo_local="Estados Unidos",
+                equipo_visita="Paraguay",
+                goles_local=4,
+                goles_visita=1,
+                resultado_oficial_cargado=True,
+            )
+            db.add_all([usuario, partido])
+            db.commit()
+            db.add(
+                Pronostico(
+                    usuario_id=usuario.id,
+                    partido_id=partido.id,
+                    goles_local_pronosticado=2,
+                    goles_visita_pronosticado=2,
+                )
+            )
+            db.commit()
+
+        df = database.ranking_dataframe()
+
+        self.assertEqual(int(df.loc[0, "Sin puntaje"]), 1)
+        self.assertEqual(int(df.loc[0, "Total"]), 0)
 
     def test_empate_correcto_aplica_solo_despues_del_corte(self) -> None:
         with database.SessionLocal() as db:

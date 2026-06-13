@@ -85,6 +85,29 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 FASES = ["Prueba", "Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semifinal", "Tercer Lugar", "Final"]
 _DB_INITIALIZED_ENGINE_ID: int | None = None
+FIXTURE_DATE_CORRECTIONS = [
+    {
+        "fase": "Fase de grupos",
+        "local": "Australia",
+        "visita": "Turquía",
+        "fecha": "2026-06-14",
+        "hora": "00:00",
+    },
+    {
+        "fase": "Fase de grupos",
+        "local": "Austria",
+        "visita": "Jordania",
+        "fecha": "2026-06-17",
+        "hora": "00:00",
+    },
+    {
+        "fase": "Fase de grupos",
+        "local": "Túnez",
+        "visita": "Japón",
+        "fecha": "2026-06-21",
+        "hora": "00:00",
+    },
+]
 
 
 def init_db() -> None:
@@ -94,6 +117,7 @@ def init_db() -> None:
         return
     Base.metadata.create_all(engine)
     ensure_fixture_loaded()
+    apply_fixture_date_corrections()
     _DB_INITIALIZED_ENGINE_ID = current_engine_id
 
 
@@ -174,6 +198,27 @@ def sync_missing_fixture_from_csv() -> int:
                 creados += 1
         db.commit()
         return creados
+
+
+def apply_fixture_date_corrections() -> int:
+    corregidos = 0
+    with SessionLocal() as db:
+        for correction in FIXTURE_DATE_CORRECTIONS:
+            partido = db.scalar(
+                select(Partido).where(
+                    Partido.fase == correction["fase"],
+                    Partido.equipo_local == correction["local"],
+                    Partido.equipo_visita == correction["visita"],
+                )
+            )
+            if not partido:
+                continue
+            nueva_fecha = chile_to_utc_naive(correction["fecha"], correction["hora"])
+            if partido.fecha_hora_utc != nueva_fecha:
+                partido.fecha_hora_utc = nueva_fecha
+                corregidos += 1
+        db.commit()
+    return corregidos
 
 
 def normalizar_nombre_participante(nombre: str) -> str:
@@ -283,7 +328,7 @@ def ranking_dataframe():
         bonus_por_usuario = {b.usuario_id: b for b in db.scalars(select(PronosticoBonus)).all()}
         oficial = db.get(ResultadoBonus, 1)
         for u in usuarios:
-            total = exactos = resultado = cant_goles = bonus = 0
+            total = exactos = resultado = cant_goles = sin_puntaje = bonus = 0
             for p in u.pronosticos:
                 if p.partido.resultado_oficial_cargado:
                     puntos, tipo = calcular_puntaje(
@@ -297,6 +342,7 @@ def ranking_dataframe():
                     exactos += tipo == "exacto"
                     resultado += tipo == "ganador"
                     cant_goles += tipo == "goles"
+                    sin_puntaje += tipo == "ninguno"
             bonus = calcular_bonus_usuario(bonus_por_usuario.get(u.id), oficial)
             total += bonus
             rows.append(
@@ -305,12 +351,13 @@ def ranking_dataframe():
                     "Exactos": exactos,
                     "Resultado": resultado,
                     "Cant. goles": cant_goles,
+                    "Sin puntaje": sin_puntaje,
                     "Bonus": bonus,
                     "Total": total,
                 }
             )
 
-    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Resultado", "Cant. goles", "Bonus", "Total"])
+    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Resultado", "Cant. goles", "Sin puntaje", "Bonus", "Total"])
     if not df.empty:
         df = df.sort_values(["Total", "Exactos", "Resultado", "Cant. goles"], ascending=False).reset_index(drop=True)
         df.insert(0, "Posición", range(1, len(df) + 1))
