@@ -118,6 +118,7 @@ def init_db() -> None:
     Base.metadata.create_all(engine)
     ensure_fixture_loaded()
     apply_fixture_date_corrections()
+    repair_fixture_duplicates()
     _DB_INITIALIZED_ENGINE_ID = current_engine_id
 
 
@@ -177,7 +178,18 @@ def sync_missing_fixture_from_csv() -> int:
             reader = csv.DictReader(f)
             for row in reader:
                 fecha_hora_utc = chile_to_utc_naive(row["fecha"], row["hora_chile"])
-                existe = db.scalar(
+                existente = db.scalar(
+                    select(Partido).where(
+                        Partido.fase == row["fase"],
+                        Partido.equipo_local == row["local"],
+                        Partido.equipo_visita == row["visita"],
+                    )
+                )
+                if existente:
+                    if existente.fecha_hora_utc != fecha_hora_utc:
+                        existente.fecha_hora_utc = fecha_hora_utc
+                    continue
+                existe_misma_fecha = db.scalar(
                     select(Partido.id).where(
                         Partido.fecha_hora_utc == fecha_hora_utc,
                         Partido.fase == row["fase"],
@@ -185,7 +197,7 @@ def sync_missing_fixture_from_csv() -> int:
                         Partido.equipo_visita == row["visita"],
                     )
                 )
-                if existe:
+                if existe_misma_fecha:
                     continue
                 db.add(
                     Partido(
@@ -197,7 +209,7 @@ def sync_missing_fixture_from_csv() -> int:
                 )
                 creados += 1
         db.commit()
-        return creados
+    return creados
 
 
 def apply_fixture_date_corrections() -> int:
@@ -219,6 +231,54 @@ def apply_fixture_date_corrections() -> int:
                 corregidos += 1
         db.commit()
     return corregidos
+
+
+def repair_fixture_duplicates() -> int:
+    eliminados = 0
+    with SessionLocal() as db:
+        for correction in FIXTURE_DATE_CORRECTIONS:
+            fecha_correcta = chile_to_utc_naive(correction["fecha"], correction["hora"])
+            partidos = db.scalars(
+                select(Partido)
+                .where(
+                    Partido.fase == correction["fase"],
+                    Partido.equipo_local == correction["local"],
+                    Partido.equipo_visita == correction["visita"],
+                )
+                .order_by(Partido.fecha_hora_utc.desc(), Partido.id)
+            ).all()
+            if len(partidos) <= 1:
+                continue
+
+            keeper = next((p for p in partidos if p.fecha_hora_utc == fecha_correcta), partidos[0])
+            keeper.fecha_hora_utc = fecha_correcta
+
+            for duplicate in partidos:
+                if duplicate.id == keeper.id:
+                    continue
+
+                if duplicate.resultado_oficial_cargado and not keeper.resultado_oficial_cargado:
+                    keeper.goles_local = duplicate.goles_local
+                    keeper.goles_visita = duplicate.goles_visita
+                    keeper.resultado_oficial_cargado = True
+
+                pronosticos = db.scalars(select(Pronostico).where(Pronostico.partido_id == duplicate.id)).all()
+                for pronostico in pronosticos:
+                    existente = db.scalar(
+                        select(Pronostico).where(
+                            Pronostico.usuario_id == pronostico.usuario_id,
+                            Pronostico.partido_id == keeper.id,
+                        )
+                    )
+                    if existente:
+                        db.delete(pronostico)
+                    else:
+                        pronostico.partido_id = keeper.id
+
+                db.delete(duplicate)
+                eliminados += 1
+        db.commit()
+    return eliminados
 
 
 def normalizar_nombre_participante(nombre: str) -> str:

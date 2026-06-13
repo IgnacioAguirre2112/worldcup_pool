@@ -4,11 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 
 import database
-from models import Base, Partido
+from models import Base, Partido, Pronostico, Usuario
 
 
 class FixtureCorrectionsTest(unittest.TestCase):
@@ -46,6 +46,51 @@ class FixtureCorrectionsTest(unittest.TestCase):
 
         self.assertEqual(corregidos, 1)
         self.assertEqual(database.utc_to_chile(partido.fecha_hora_utc).strftime("%Y-%m-%d %H:%M"), "2026-06-14 00:00")
+
+    def test_elimina_duplicados_y_conserva_pronosticos(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Tester")
+            antiguo = Partido(
+                fecha_hora_utc=database.chile_to_utc_naive("2026-06-13", "00:00"),
+                fase="Fase de grupos",
+                equipo_local="Australia",
+                equipo_visita="Turquía",
+            )
+            correcto = Partido(
+                fecha_hora_utc=database.chile_to_utc_naive("2026-06-14", "00:00"),
+                fase="Fase de grupos",
+                equipo_local="Australia",
+                equipo_visita="Turquía",
+            )
+            db.add_all([usuario, antiguo, correcto])
+            db.commit()
+            db.add(
+                Pronostico(
+                    usuario_id=usuario.id,
+                    partido_id=antiguo.id,
+                    goles_local_pronosticado=1,
+                    goles_visita_pronosticado=0,
+                )
+            )
+            db.commit()
+
+        eliminados = database.repair_fixture_duplicates()
+
+        with database.SessionLocal() as db:
+            partidos = db.scalars(
+                select(Partido).where(
+                    Partido.fase == "Fase de grupos",
+                    Partido.equipo_local == "Australia",
+                    Partido.equipo_visita == "Turquía",
+                )
+            ).all()
+            pronosticos = db.scalars(select(Pronostico)).all()
+
+        self.assertEqual(eliminados, 1)
+        self.assertEqual(len(partidos), 1)
+        self.assertEqual(database.utc_to_chile(partidos[0].fecha_hora_utc).strftime("%Y-%m-%d %H:%M"), "2026-06-14 00:00")
+        self.assertEqual(len(pronosticos), 1)
+        self.assertEqual(pronosticos[0].partido_id, partidos[0].id)
 
 
 if __name__ == "__main__":
