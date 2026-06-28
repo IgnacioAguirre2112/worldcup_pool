@@ -85,7 +85,7 @@ for partido in partidos:
 st.divider()
 st.subheader("Bonus")
 st.caption("Campeón +5 · Subcampeón +3 · Tercer lugar +1 · Goleador +3")
-st.caption("Disponible hasta el 28-06-2026 a las 00:00 hora Chile.")
+st.caption("Disponible hasta el 29-06-2026 a las 00:00 hora Chile.")
 
 equipos = [""] + equipos_disponibles()
 

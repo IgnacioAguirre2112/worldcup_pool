@@ -21,7 +21,7 @@ DB_PATH = ROOT / "data" / "mundial2026.db"
 FIXTURE_PATH = ROOT / "uploads" / "fixture_mundial_2026.csv"
 CHILE_TZ = ZoneInfo("America/Santiago")
 UTC_TZ = ZoneInfo("UTC")
-BONUS_DEADLINE_CHILE = datetime(2026, 6, 28, 0, 0, tzinfo=CHILE_TZ)
+BONUS_DEADLINE_CHILE = datetime(2026, 6, 29, 0, 0, tzinfo=CHILE_TZ)
 EMPATE_RULE_EFFECTIVE_CHILE = datetime(2026, 6, 12, 9, 50, tzinfo=CHILE_TZ)
 EMPATE_RULE_EFFECTIVE_UTC = EMPATE_RULE_EFFECTIVE_CHILE.astimezone(UTC_TZ).replace(tzinfo=None)
 
