@@ -473,6 +473,75 @@ def ranking_dataframe():
     return df
 
 
+def ranking_history_dataframe():
+    import pandas as pd
+
+    with SessionLocal() as db:
+        usuarios = db.scalars(select(Usuario).order_by(Usuario.nombre)).all()
+        partidos = db.scalars(
+            select(Partido)
+            .where(Partido.resultado_oficial_cargado == True)
+            .order_by(Partido.fecha_hora_utc, Partido.id)
+        ).all()
+        pronosticos = db.scalars(
+            select(Pronostico)
+            .join(Pronostico.partido)
+            .where(Partido.resultado_oficial_cargado == True)
+        ).all()
+
+    if not usuarios or not partidos:
+        return pd.DataFrame(columns=["Partido", "Fecha", "Participante", "Posición", "Total"])
+
+    pronosticos_por_partido: dict[int, list[Pronostico]] = {}
+    for pronostico in pronosticos:
+        pronosticos_por_partido.setdefault(pronostico.partido_id, []).append(pronostico)
+
+    state = {
+        u.id: {
+            "Participante": u.nombre,
+            "Total": 0,
+            "Exactos": 0,
+            "Resultado": 0,
+            "Cant. goles": 0,
+        }
+        for u in usuarios
+    }
+    rows = []
+    for index, partido in enumerate(partidos, start=1):
+        for pronostico in pronosticos_por_partido.get(partido.id, []):
+            puntos, tipo = calcular_puntaje(
+                pronostico.goles_local_pronosticado,
+                pronostico.goles_visita_pronosticado,
+                partido.goles_local,
+                partido.goles_visita,
+                empate_correcto_3=partido.fecha_hora_utc >= EMPATE_RULE_EFFECTIVE_UTC,
+            )
+            user_state = state[pronostico.usuario_id]
+            user_state["Total"] += puntos
+            user_state["Exactos"] += tipo == "exacto"
+            user_state["Resultado"] += tipo == "ganador"
+            user_state["Cant. goles"] += tipo == "goles"
+
+        ranking = sorted(
+            state.values(),
+            key=lambda item: (-item["Total"], -item["Exactos"], -item["Resultado"], -item["Cant. goles"], item["Participante"].lower()),
+        )
+        partido_label = f"{index}. {partido.equipo_local} vs {partido.equipo_visita}"
+        fecha = utc_to_chile(partido.fecha_hora_utc).strftime("%Y-%m-%d %H:%M")
+        for posicion, item in enumerate(ranking, start=1):
+            rows.append(
+                {
+                    "Partido": partido_label,
+                    "Fecha": fecha,
+                    "Participante": item["Participante"],
+                    "Posición": posicion,
+                    "Total": item["Total"],
+                }
+            )
+
+    return pd.DataFrame(rows, columns=["Partido", "Fecha", "Participante", "Posición", "Total"])
+
+
 def pronosticos_publicos_dataframe():
     import pandas as pd
 

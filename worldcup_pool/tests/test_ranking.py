@@ -82,6 +82,51 @@ class RankingTest(unittest.TestCase):
         self.assertEqual(int(df.loc[0, "Sin puntaje"]), 1)
         self.assertEqual(int(df.loc[0, "Total"]), 0)
 
+    def test_ranking_history_muestra_posiciones_acumuladas(self) -> None:
+        with database.SessionLocal() as db:
+            a = Usuario(nombre="Ana")
+            b = Usuario(nombre="Beto")
+            partido_1 = Partido(
+                fecha_hora_utc=database.EMPATE_RULE_EFFECTIVE_UTC + timedelta(days=1),
+                fase="Prueba",
+                equipo_local="Chile",
+                equipo_visita="Brasil",
+                goles_local=1,
+                goles_visita=0,
+                resultado_oficial_cargado=True,
+            )
+            partido_2 = Partido(
+                fecha_hora_utc=database.EMPATE_RULE_EFFECTIVE_UTC + timedelta(days=2),
+                fase="Prueba",
+                equipo_local="Argentina",
+                equipo_visita="Uruguay",
+                goles_local=2,
+                goles_visita=2,
+                resultado_oficial_cargado=True,
+            )
+            db.add_all([a, b, partido_1, partido_2])
+            db.commit()
+            db.add_all(
+                [
+                    Pronostico(usuario_id=a.id, partido_id=partido_1.id, goles_local_pronosticado=1, goles_visita_pronosticado=0),
+                    Pronostico(usuario_id=b.id, partido_id=partido_1.id, goles_local_pronosticado=0, goles_visita_pronosticado=2),
+                    Pronostico(usuario_id=a.id, partido_id=partido_2.id, goles_local_pronosticado=1, goles_visita_pronosticado=1),
+                    Pronostico(usuario_id=b.id, partido_id=partido_2.id, goles_local_pronosticado=2, goles_visita_pronosticado=2),
+                ]
+            )
+            db.commit()
+
+        history = database.ranking_history_dataframe()
+
+        self.assertEqual(set(history.columns), {"Partido", "Fecha", "Participante", "Posición", "Total"})
+        final = history[history["Partido"].str.startswith("2.")]
+        ana = final[final["Participante"] == "Ana"].iloc[0]
+        beto = final[final["Participante"] == "Beto"].iloc[0]
+        self.assertEqual(int(ana["Total"]), 8)
+        self.assertEqual(int(ana["Posición"]), 1)
+        self.assertEqual(int(beto["Total"]), 5)
+        self.assertEqual(int(beto["Posición"]), 2)
+
     def test_empate_correcto_aplica_solo_despues_del_corte(self) -> None:
         with database.SessionLocal() as db:
             usuario = Usuario(nombre="Empates")
