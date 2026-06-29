@@ -119,6 +119,7 @@ def init_db() -> None:
     ensure_fixture_loaded()
     apply_fixture_date_corrections()
     repair_fixture_duplicates()
+    remove_knockout_placeholder_duplicates()
     _DB_INITIALIZED_ENGINE_ID = current_engine_id
 
 
@@ -177,6 +178,8 @@ def sync_missing_fixture_from_csv() -> int:
         with FIXTURE_PATH.open(encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                if row["fase"] != "Fase de grupos" and is_fixture_placeholder(row["local"], row["visita"]):
+                    continue
                 fecha_hora_utc = chile_to_utc_naive(row["fecha"], row["hora_chile"])
                 existente = db.scalar(
                     select(Partido).where(
@@ -210,6 +213,11 @@ def sync_missing_fixture_from_csv() -> int:
                 creados += 1
         db.commit()
     return creados
+
+
+def is_fixture_placeholder(local: str, visita: str) -> bool:
+    text = f"{local} {visita}".lower()
+    return "grupo" in text or "ganador partido" in text or "perdedor partido" in text
 
 
 def apply_fixture_date_corrections() -> int:
@@ -277,6 +285,47 @@ def repair_fixture_duplicates() -> int:
 
                 db.delete(duplicate)
                 eliminados += 1
+        db.commit()
+    return eliminados
+
+
+def remove_knockout_placeholder_duplicates() -> int:
+    eliminados = 0
+    with SessionLocal() as db:
+        partidos = db.scalars(
+            select(Partido)
+            .where(Partido.fase != "Fase de grupos")
+            .order_by(Partido.fecha_hora_utc, Partido.id)
+        ).all()
+        reales_por_hora = {
+            (p.fase, p.fecha_hora_utc): p
+            for p in partidos
+            if not is_fixture_placeholder(p.equipo_local, p.equipo_visita)
+        }
+
+        for partido in partidos:
+            if not is_fixture_placeholder(partido.equipo_local, partido.equipo_visita):
+                continue
+            real = reales_por_hora.get((partido.fase, partido.fecha_hora_utc))
+            if not real:
+                continue
+
+            pronosticos = db.scalars(select(Pronostico).where(Pronostico.partido_id == partido.id)).all()
+            for pronostico in pronosticos:
+                existente = db.scalar(
+                    select(Pronostico).where(
+                        Pronostico.usuario_id == pronostico.usuario_id,
+                        Pronostico.partido_id == real.id,
+                    )
+                )
+                if existente:
+                    db.delete(pronostico)
+                else:
+                    pronostico.partido_id = real.id
+
+            db.delete(partido)
+            eliminados += 1
+
         db.commit()
     return eliminados
 

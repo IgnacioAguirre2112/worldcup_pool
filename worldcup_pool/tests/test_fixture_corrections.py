@@ -92,6 +92,80 @@ class FixtureCorrectionsTest(unittest.TestCase):
         self.assertEqual(len(pronosticos), 1)
         self.assertEqual(pronosticos[0].partido_id, partidos[0].id)
 
+    def test_elimina_placeholders_de_diecisiseisavos_si_existe_partido_real(self) -> None:
+        fecha = database.chile_to_utc_naive("2026-06-28", "15:00")
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Tester")
+            real = Partido(
+                id=73,
+                fecha_hora_utc=fecha,
+                fase="Dieciseisavos",
+                equipo_local="Sudáfrica",
+                equipo_visita="Canadá",
+            )
+            placeholder_1 = Partido(
+                id=176,
+                fecha_hora_utc=fecha,
+                fase="Dieciseisavos",
+                equipo_local="2º Grupo A",
+                equipo_visita="2º Grupo B",
+            )
+            placeholder_2 = Partido(
+                id=212,
+                fecha_hora_utc=fecha,
+                fase="Dieciseisavos",
+                equipo_local="2º Grupo A",
+                equipo_visita="2º Grupo B",
+            )
+            db.add_all([usuario, real, placeholder_1, placeholder_2])
+            db.commit()
+            db.add(
+                Pronostico(
+                    usuario_id=usuario.id,
+                    partido_id=placeholder_1.id,
+                    goles_local_pronosticado=2,
+                    goles_visita_pronosticado=1,
+                )
+            )
+            db.commit()
+
+        eliminados = database.remove_knockout_placeholder_duplicates()
+
+        with database.SessionLocal() as db:
+            partidos = db.scalars(select(Partido).where(Partido.fecha_hora_utc == fecha)).all()
+            pronostico = db.scalar(select(Pronostico))
+
+        self.assertEqual(eliminados, 2)
+        self.assertEqual([(p.id, p.equipo_local, p.equipo_visita) for p in partidos], [(73, "Sudáfrica", "Canadá")])
+        self.assertEqual(pronostico.partido_id, 73)
+
+    def test_sync_no_recrea_placeholders_de_eliminatorias(self) -> None:
+        with database.SessionLocal() as db:
+            db.add(
+                Partido(
+                    id=73,
+                    fecha_hora_utc=database.chile_to_utc_naive("2026-06-28", "15:00"),
+                    fase="Dieciseisavos",
+                    equipo_local="Sudáfrica",
+                    equipo_visita="Canadá",
+                )
+            )
+            db.commit()
+
+        creados = database.sync_missing_fixture_from_csv()
+
+        with database.SessionLocal() as db:
+            placeholder = db.scalar(
+                select(Partido).where(
+                    Partido.fase == "Dieciseisavos",
+                    Partido.equipo_local == "2º Grupo A",
+                    Partido.equipo_visita == "2º Grupo B",
+                )
+            )
+
+        self.assertGreaterEqual(creados, 0)
+        self.assertIsNone(placeholder)
+
 
 if __name__ == "__main__":
     unittest.main()
