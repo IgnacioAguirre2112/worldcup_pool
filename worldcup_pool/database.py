@@ -452,7 +452,8 @@ def ranking_dataframe():
                     resultado += tipo == "ganador"
                     cant_goles += tipo == "goles"
                     sin_puntaje += tipo == "ninguno"
-            bonus = calcular_bonus_usuario(bonus_por_usuario.get(u.id), oficial)
+            bonus_predicho = bonus_por_usuario.get(u.id)
+            bonus = calcular_bonus_usuario(bonus_predicho, oficial)
             total += bonus
             rows.append(
                 {
@@ -462,11 +463,30 @@ def ranking_dataframe():
                     "Cant. goles": cant_goles,
                     "Sin puntaje": sin_puntaje,
                     "Bonus": bonus,
+                    "Campeón": bonus_predicho.campeon if bonus_predicho and bonus_predicho.campeon else "",
+                    "Subcampeón": bonus_predicho.subcampeon if bonus_predicho and bonus_predicho.subcampeon else "",
+                    "Tercer lugar": bonus_predicho.tercer_lugar if bonus_predicho and bonus_predicho.tercer_lugar else "",
+                    "Goleador": bonus_predicho.goleador if bonus_predicho and bonus_predicho.goleador else "",
                     "Total": total,
                 }
             )
 
-    df = pd.DataFrame(rows, columns=["Participante", "Exactos", "Resultado", "Cant. goles", "Sin puntaje", "Bonus", "Total"])
+    df = pd.DataFrame(
+        rows,
+        columns=[
+            "Participante",
+            "Exactos",
+            "Resultado",
+            "Cant. goles",
+            "Sin puntaje",
+            "Bonus",
+            "Campeón",
+            "Subcampeón",
+            "Tercer lugar",
+            "Goleador",
+            "Total",
+        ],
+    )
     if not df.empty:
         df = df.sort_values(["Total", "Exactos", "Resultado", "Cant. goles"], ascending=False).reset_index(drop=True)
         df.insert(0, "Posición", range(1, len(df) + 1))
@@ -571,6 +591,48 @@ def pronosticos_publicos_dataframe():
                         else "Oculto hasta el inicio"
                     ),
                     "Estado": "Cerrado" if cerrado else "Abierto",
+                    "Ingresado": pronostico.fecha_ingreso.strftime("%Y-%m-%d %H:%M"),
+                }
+            )
+    return pd.DataFrame(rows, columns=["Fecha", "Fase", "Partido", "Participante", "Pronóstico", "Estado", "Ingresado"])
+
+
+def ultimos_pronosticos_cerrados_dataframe(limit: int = 2):
+    import pandas as pd
+
+    ahora = datetime.utcnow()
+    with SessionLocal() as db:
+        partidos = db.scalars(
+            select(Partido)
+            .where(Partido.fecha_hora_utc <= ahora)
+            .order_by(Partido.fecha_hora_utc.desc(), Partido.id.desc())
+            .limit(limit)
+        ).all()
+        partido_ids = [p.id for p in partidos]
+        if not partido_ids:
+            return pd.DataFrame(columns=["Fecha", "Fase", "Partido", "Participante", "Pronóstico", "Estado", "Ingresado"])
+
+        pronosticos = db.scalars(
+            select(Pronostico)
+            .options(joinedload(Pronostico.usuario), joinedload(Pronostico.partido))
+            .where(Pronostico.partido_id.in_(partido_ids))
+            .join(Pronostico.usuario)
+            .join(Pronostico.partido)
+            .order_by(Partido.fecha_hora_utc.desc(), Partido.equipo_local, Usuario.nombre)
+        ).all()
+
+        rows = []
+        for pronostico in pronosticos:
+            partido = pronostico.partido
+            hora_chile = utc_to_chile(partido.fecha_hora_utc)
+            rows.append(
+                {
+                    "Fecha": hora_chile.strftime("%Y-%m-%d %H:%M"),
+                    "Fase": partido.fase,
+                    "Partido": f"{partido.equipo_local} vs {partido.equipo_visita}",
+                    "Participante": pronostico.usuario.nombre,
+                    "Pronóstico": f"{pronostico.goles_local_pronosticado} - {pronostico.goles_visita_pronosticado}",
+                    "Estado": "Cerrado",
                     "Ingresado": pronostico.fecha_ingreso.strftime("%Y-%m-%d %H:%M"),
                 }
             )

@@ -66,6 +66,48 @@ class PronosticosPublicosTest(unittest.TestCase):
         self.assertEqual(df.iloc[0]["Pronóstico"], "2 - 1")
         self.assertEqual(df.iloc[0]["Estado"], "Cerrado")
 
+    def test_ultimos_cerrados_muestra_solo_dos_partidos_mas_recientes(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Tester")
+            partidos = [
+                Partido(
+                    fecha_hora_utc=datetime.utcnow() - timedelta(hours=3),
+                    fase="Prueba",
+                    equipo_local="Chile",
+                    equipo_visita="Brasil",
+                ),
+                Partido(
+                    fecha_hora_utc=datetime.utcnow() - timedelta(hours=2),
+                    fase="Prueba",
+                    equipo_local="Argentina",
+                    equipo_visita="Uruguay",
+                ),
+                Partido(
+                    fecha_hora_utc=datetime.utcnow() - timedelta(hours=1),
+                    fase="Prueba",
+                    equipo_local="México",
+                    equipo_visita="Canadá",
+                ),
+            ]
+            db.add_all([usuario, *partidos])
+            db.commit()
+            for partido in partidos:
+                db.add(
+                    Pronostico(
+                        usuario_id=usuario.id,
+                        partido_id=partido.id,
+                        goles_local_pronosticado=1,
+                        goles_visita_pronosticado=0,
+                    )
+                )
+            db.commit()
+
+        df = database.ultimos_pronosticos_cerrados_dataframe(limit=2)
+
+        self.assertEqual(set(df["Partido"]), {"Argentina vs Uruguay", "México vs Canadá"})
+        self.assertNotIn("Chile vs Brasil", set(df["Partido"]))
+        self.assertTrue((df["Estado"] == "Cerrado").all())
+
 
 if __name__ == "__main__":
     unittest.main()

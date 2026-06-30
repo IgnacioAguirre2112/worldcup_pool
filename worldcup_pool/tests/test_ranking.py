@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import database
-from models import Base, Partido, Pronostico, Usuario
+from models import Base, Partido, Pronostico, PronosticoBonus, Usuario
 
 
 class RankingTest(unittest.TestCase):
@@ -81,6 +81,29 @@ class RankingTest(unittest.TestCase):
 
         self.assertEqual(int(df.loc[0, "Sin puntaje"]), 1)
         self.assertEqual(int(df.loc[0, "Total"]), 0)
+
+    def test_ranking_incluye_bonus_pronosticado(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Bonus")
+            db.add(usuario)
+            db.commit()
+            db.add(
+                PronosticoBonus(
+                    usuario_id=usuario.id,
+                    campeon="Brasil",
+                    subcampeon="Argentina",
+                    tercer_lugar="Francia",
+                    goleador="Mbappé",
+                )
+            )
+            db.commit()
+
+        df = database.ranking_dataframe()
+
+        self.assertEqual(df.loc[0, "Campeón"], "Brasil")
+        self.assertEqual(df.loc[0, "Subcampeón"], "Argentina")
+        self.assertEqual(df.loc[0, "Tercer lugar"], "Francia")
+        self.assertEqual(df.loc[0, "Goleador"], "Mbappé")
 
     def test_ranking_history_muestra_posiciones_acumuladas(self) -> None:
         with database.SessionLocal() as db:
