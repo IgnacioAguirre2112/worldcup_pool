@@ -31,7 +31,12 @@ if not partidos:
 
 st.caption("Puedes editar cada pronóstico hasta la hora de inicio del partido.")
 
+fase_actual = None
 for partido in partidos:
+    if partido.fase != fase_actual:
+        fase_actual = partido.fase
+        st.markdown(f'<div class="wc-phase-title">{fase_actual}</div>', unsafe_allow_html=True)
+
     cerrado = datetime.utcnow() >= partido.fecha_hora_utc
     hora_chile = utc_to_chile(partido.fecha_hora_utc)
     with st.container(border=True):

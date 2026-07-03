@@ -332,6 +332,19 @@ def inject_theme() -> None:
             padding: 18px;
             background: var(--wc-panel);
         }
+        .wc-phase-title {
+            margin: 28px 0 14px;
+            padding: 12px 16px;
+            border-left: 4px solid var(--wc-green);
+            border-top: 1px solid rgba(84, 144, 255, 0.32);
+            border-bottom: 1px solid rgba(84, 144, 255, 0.32);
+            color: #ffffff;
+            font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+            font-weight: 950;
+            letter-spacing: 0.08rem;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, rgba(9, 28, 70, 0.92), rgba(9, 28, 70, 0.18));
+        }
         .wc-stat {
             font-size: 2rem;
             line-height: 1;
