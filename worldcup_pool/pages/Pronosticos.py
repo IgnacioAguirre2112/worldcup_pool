@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime
 
 import streamlit as st
@@ -31,61 +32,62 @@ if not partidos:
 
 st.caption("Puedes editar cada pronóstico hasta la hora de inicio del partido.")
 
-fase_actual = None
+partidos_por_fase: OrderedDict[str, list[Partido]] = OrderedDict()
 for partido in partidos:
-    if partido.fase != fase_actual:
-        fase_actual = partido.fase
-        st.markdown(f'<div class="wc-phase-title">{fase_actual}</div>', unsafe_allow_html=True)
+    partidos_por_fase.setdefault(partido.fase, []).append(partido)
 
-    cerrado = datetime.utcnow() >= partido.fecha_hora_utc
-    hora_chile = utc_to_chile(partido.fecha_hora_utc)
-    with st.container(border=True):
-        top, form = st.columns([1.5, 1])
-        with top:
-            st.markdown(
-                f"""
-                <div class="wc-match" style="min-height:190px;gap:18px;">
-                    <div class="wc-team">
-                        {flag_img(partido.equipo_local)}
-                        <div class="wc-team-name" style="font-size:1.45rem;">{partido.equipo_local}</div>
-                    </div>
-                    <div class="wc-vs" style="font-size:2.4rem;">VS</div>
-                    <div class="wc-team">
-                        {flag_img(partido.equipo_visita)}
-                        <div class="wc-team-name" style="font-size:1.45rem;">{partido.equipo_visita}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.caption(f"{partido.fase} · {hora_chile:%Y-%m-%d %H:%M} Chile")
+for fase, partidos_fase in partidos_por_fase.items():
+    with st.expander(fase.upper(), expanded=True):
+        for partido in partidos_fase:
+            cerrado = datetime.utcnow() >= partido.fecha_hora_utc
+            hora_chile = utc_to_chile(partido.fecha_hora_utc)
+            with st.container(border=True):
+                top, form = st.columns([1.5, 1])
+                with top:
+                    st.markdown(
+                        f"""
+                        <div class="wc-match" style="min-height:190px;gap:18px;">
+                            <div class="wc-team">
+                                {flag_img(partido.equipo_local)}
+                                <div class="wc-team-name" style="font-size:1.45rem;">{partido.equipo_local}</div>
+                            </div>
+                            <div class="wc-vs" style="font-size:2.4rem;">VS</div>
+                            <div class="wc-team">
+                                {flag_img(partido.equipo_visita)}
+                                <div class="wc-team-name" style="font-size:1.45rem;">{partido.equipo_visita}</div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    st.caption(f"{partido.fase} · {hora_chile:%Y-%m-%d %H:%M} Chile")
 
-        with form:
-            existente = pronosticos_existentes.get(partido.id)
-            gl = st.number_input(
-                f"Goles {partido.equipo_local}",
-                0,
-                20,
-                value=existente.goles_local_pronosticado if existente else 0,
-                disabled=cerrado,
-                key=f"gl_{partido.id}",
-            )
-            gv = st.number_input(
-                f"Goles {partido.equipo_visita}",
-                0,
-                20,
-                value=existente.goles_visita_pronosticado if existente else 0,
-                disabled=cerrado,
-                key=f"gv_{partido.id}",
-            )
-            if cerrado:
-                st.warning("Pronóstico cerrado")
-            elif st.button("Guardar pronóstico", key=f"save_{partido.id}", use_container_width=True):
-                try:
-                    guardar_pronostico(usuario_id, partido.id, int(gl), int(gv))
-                    st.success("Pronóstico guardado")
-                except Exception as exc:
-                    st.error(str(exc))
+                with form:
+                    existente = pronosticos_existentes.get(partido.id)
+                    gl = st.number_input(
+                        f"Goles {partido.equipo_local}",
+                        0,
+                        20,
+                        value=existente.goles_local_pronosticado if existente else 0,
+                        disabled=cerrado,
+                        key=f"gl_{partido.id}",
+                    )
+                    gv = st.number_input(
+                        f"Goles {partido.equipo_visita}",
+                        0,
+                        20,
+                        value=existente.goles_visita_pronosticado if existente else 0,
+                        disabled=cerrado,
+                        key=f"gv_{partido.id}",
+                    )
+                    if cerrado:
+                        st.warning("Pronóstico cerrado")
+                    elif st.button("Guardar pronóstico", key=f"save_{partido.id}", use_container_width=True):
+                        try:
+                            guardar_pronostico(usuario_id, partido.id, int(gl), int(gv))
+                            st.success("Pronóstico guardado")
+                        except Exception as exc:
+                            st.error(str(exc))
 
 st.divider()
 st.subheader("Bonus")

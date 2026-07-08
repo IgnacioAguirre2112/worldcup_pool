@@ -345,6 +345,31 @@ def inject_theme() -> None:
             text-transform: uppercase;
             background: linear-gradient(90deg, rgba(9, 28, 70, 0.92), rgba(9, 28, 70, 0.18));
         }
+        div[data-testid="stExpander"] {
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stExpander"] details {
+            border: 0 !important;
+        }
+        div[data-testid="stExpander"] details > summary {
+            margin: 28px 0 14px;
+            padding: 12px 16px !important;
+            border-left: 4px solid var(--wc-green);
+            border-top: 1px solid rgba(84, 144, 255, 0.32);
+            border-bottom: 1px solid rgba(84, 144, 255, 0.32);
+            border-radius: 0;
+            background: linear-gradient(90deg, rgba(9, 28, 70, 0.92), rgba(9, 28, 70, 0.18));
+        }
+        div[data-testid="stExpander"] details > summary *,
+        div[data-testid="stExpander"] details > summary p {
+            color: #ffffff !important;
+            font-size: clamp(1.1rem, 2.2vw, 1.7rem) !important;
+            font-weight: 950 !important;
+            letter-spacing: 0.08rem !important;
+            text-transform: uppercase !important;
+        }
         .wc-stat {
             font-size: 2rem;
             line-height: 1;

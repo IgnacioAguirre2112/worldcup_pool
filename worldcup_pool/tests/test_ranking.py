@@ -82,6 +82,44 @@ class RankingTest(unittest.TestCase):
         self.assertEqual(int(df.loc[0, "Sin puntaje"]), 1)
         self.assertEqual(int(df.loc[0, "Total"]), 0)
 
+    def test_ranking_cuenta_pronosticos_sin_guardar_en_partidos_cerrados(self) -> None:
+        with database.SessionLocal() as db:
+            usuario = Usuario(nombre="Pendiente")
+            cerrado_con_pronostico = Partido(
+                fecha_hora_utc=datetime.utcnow() - timedelta(hours=3),
+                fase="Prueba",
+                equipo_local="Chile",
+                equipo_visita="Brasil",
+            )
+            cerrado_sin_pronostico = Partido(
+                fecha_hora_utc=datetime.utcnow() - timedelta(hours=2),
+                fase="Prueba",
+                equipo_local="Argentina",
+                equipo_visita="Uruguay",
+            )
+            abierto_sin_pronostico = Partido(
+                fecha_hora_utc=datetime.utcnow() + timedelta(hours=2),
+                fase="Prueba",
+                equipo_local="Francia",
+                equipo_visita="Marruecos",
+            )
+            db.add_all([usuario, cerrado_con_pronostico, cerrado_sin_pronostico, abierto_sin_pronostico])
+            db.commit()
+            db.add(
+                Pronostico(
+                    usuario_id=usuario.id,
+                    partido_id=cerrado_con_pronostico.id,
+                    goles_local_pronosticado=1,
+                    goles_visita_pronosticado=0,
+                )
+            )
+            db.commit()
+
+        df = database.ranking_dataframe()
+
+        self.assertIn("Sin guardar", df.columns)
+        self.assertEqual(int(df.loc[0, "Sin guardar"]), 1)
+
     def test_ranking_incluye_bonus_pronosticado(self) -> None:
         with database.SessionLocal() as db:
             usuario = Usuario(nombre="Bonus")

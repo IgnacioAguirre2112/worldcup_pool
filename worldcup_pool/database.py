@@ -436,8 +436,13 @@ def ranking_dataframe():
         ).all()
         bonus_por_usuario = {b.usuario_id: b for b in db.scalars(select(PronosticoBonus)).all()}
         oficial = db.get(ResultadoBonus, 1)
+        partidos_cerrados_ids = set(
+            db.scalars(select(Partido.id).where(Partido.fecha_hora_utc <= datetime.utcnow())).all()
+        )
         for u in usuarios:
             total = exactos = resultado = cant_goles = sin_puntaje = bonus = 0
+            pronosticados_ids = {p.partido_id for p in u.pronosticos}
+            sin_guardar = len(partidos_cerrados_ids - pronosticados_ids)
             for p in u.pronosticos:
                 if p.partido.resultado_oficial_cargado:
                     puntos, tipo = calcular_puntaje(
@@ -462,6 +467,7 @@ def ranking_dataframe():
                     "Resultado": resultado,
                     "Cant. goles": cant_goles,
                     "Sin puntaje": sin_puntaje,
+                    "Sin guardar": sin_guardar,
                     "Bonus": bonus,
                     "Campeón": bonus_predicho.campeon if bonus_predicho and bonus_predicho.campeon else "",
                     "Subcampeón": bonus_predicho.subcampeon if bonus_predicho and bonus_predicho.subcampeon else "",
@@ -479,6 +485,7 @@ def ranking_dataframe():
             "Resultado",
             "Cant. goles",
             "Sin puntaje",
+            "Sin guardar",
             "Bonus",
             "Campeón",
             "Subcampeón",
