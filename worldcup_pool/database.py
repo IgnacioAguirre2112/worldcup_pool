@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import os
 import ssl
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -409,17 +410,30 @@ def equipos_disponibles() -> list[str]:
     return sorted({*locales, *visitas})
 
 
+def normalizar_texto_bonus(value: str | None) -> str:
+    if not value:
+        return ""
+    sin_tildes = unicodedata.normalize("NFKD", value.strip())
+    return "".join(char for char in sin_tildes if not unicodedata.combining(char)).casefold()
+
+
+def textos_bonus_iguales(predicho: str | None, oficial: str | None) -> bool:
+    predicho_normalizado = normalizar_texto_bonus(predicho)
+    oficial_normalizado = normalizar_texto_bonus(oficial)
+    return bool(predicho_normalizado and oficial_normalizado and predicho_normalizado == oficial_normalizado)
+
+
 def calcular_bonus_usuario(bonus: PronosticoBonus | None, oficial: ResultadoBonus | None) -> int:
     if not bonus or not oficial:
         return 0
     puntos = 0
-    if bonus.campeon and oficial.campeon and bonus.campeon.strip().lower() == oficial.campeon.strip().lower():
+    if textos_bonus_iguales(bonus.campeon, oficial.campeon):
         puntos += 5
-    if bonus.subcampeon and oficial.subcampeon and bonus.subcampeon.strip().lower() == oficial.subcampeon.strip().lower():
+    if textos_bonus_iguales(bonus.subcampeon, oficial.subcampeon):
         puntos += 3
-    if bonus.tercer_lugar and oficial.tercer_lugar and bonus.tercer_lugar.strip().lower() == oficial.tercer_lugar.strip().lower():
+    if textos_bonus_iguales(bonus.tercer_lugar, oficial.tercer_lugar):
         puntos += 1
-    if bonus.goleador and oficial.goleador and bonus.goleador.strip().lower() == oficial.goleador.strip().lower():
+    if textos_bonus_iguales(bonus.goleador, oficial.goleador):
         puntos += 3
     return puntos
 

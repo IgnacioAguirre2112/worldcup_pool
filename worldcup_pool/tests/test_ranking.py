@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import database
-from models import Base, Partido, Pronostico, PronosticoBonus, Usuario
+from models import Base, Partido, Pronostico, PronosticoBonus, ResultadoBonus, Usuario
 
 
 class RankingTest(unittest.TestCase):
@@ -142,6 +142,18 @@ class RankingTest(unittest.TestCase):
         self.assertEqual(df.loc[0, "Subcampeón"], "Argentina")
         self.assertEqual(df.loc[0, "Tercer lugar"], "Francia")
         self.assertEqual(df.loc[0, "Goleador"], "Mbappé")
+
+    def test_bonus_goleador_ignora_tildes_y_mayusculas(self) -> None:
+        bonus = PronosticoBonus(usuario_id=1, goleador=" mbappe ")
+        oficial = ResultadoBonus(id=1, goleador="Mbappé")
+
+        self.assertEqual(database.calcular_bonus_usuario(bonus, oficial), 3)
+
+    def test_bonus_campos_vacios_no_suman_puntos(self) -> None:
+        bonus = PronosticoBonus(usuario_id=1)
+        oficial = ResultadoBonus(id=1)
+
+        self.assertEqual(database.calcular_bonus_usuario(bonus, oficial), 0)
 
     def test_ranking_history_muestra_posiciones_acumuladas(self) -> None:
         with database.SessionLocal() as db:
